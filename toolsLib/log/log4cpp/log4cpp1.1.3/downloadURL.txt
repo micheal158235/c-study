@@ -1,2 +1,12 @@
 来源网址：http://log4cpp.sourceforge.net/
 下载网址：https://sourceforge.net/projects/log4cpp/
+
+编译说明：
+注释掉 log4cpp\include\log4cpp\config-MinGW32.h 第27行（不然编译报错）
+编译方法1：
+在解压目录下依次执行
+./configure(生成makefile)
+make
+
+编译方法2:
+使用cmake编译
