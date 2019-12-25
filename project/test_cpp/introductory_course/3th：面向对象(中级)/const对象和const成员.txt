@@ -1,0 +1,54 @@
+
+const对象和const成员
+
+const对象：
+	定义类对象时可以将其指定为const对象。定义后ocnst对象不能再被修改。
+const对象不能调用非const类型的成员函数。
+
+const 类名 对象名
+类名 const 对象名
+
+const成员
+1. const数据成员
+	在类内部使用const关键字来声明const数据成员。const数据成员的值不能被修改。
+	初始化比较特殊，只能通过初始化列表初始化。不能在构造函数里赋值。
+
+
+示例1：
+#include <iostream>
+using namespace std;
+
+int main(){
+	const CTime time(10,50,20);
+	CTime const tim2;
+	time.getHour();				//错误，const对象不能调用非const的成员函数
+	time2.getMinute();		//错误，const对象不能调用非const的成员函数
+	
+	return 0;
+}
+	
+2. 初始化列表
+	构造函数初始化列表以一个冒号开始，接着是以逗号分隔的数据成员列表，每个数据
+成员后面跟一个放在括号中的初始化式。
+
+3.const成员函数
+	const成员函数只能被const对象引用。const成员函数内可以引用const数据成员，也
+可以引用非const数据成员，但不能修改非const数据成员的值。但不能调用非const成员
+函数。
+声明const函数
+CTime.cpp
+int getNum()const;		//只能在末尾加const
+
+示例：
+#include <iostream>
+#include "Time.h"
+using namespace std;
+
+int main(){
+	const CTime time(10, 50, 20);
+	CTime const time2;
+	std::cout << time.getNum() << std::endl;
+	return 0;
+
+	return 0;
+}

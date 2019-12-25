@@ -1,0 +1,1262 @@
+
+第六天：面向对象(高级)
+
+5. 运算符重载
+	5.1 运算符重载规则
+	5.2 以成员函数形式重载运算符
+	5.3 以友元函数形式重载运算符
+	5.4 友员函数形式和成员函数形式的比较
+	5.5 对运算符重载的补充说明
+6. 运算符重载范例
+	6.1 赋值运算符=
+	6.2 函数调用运算符()
+	6.3 下标运算符[]
+	6.4 new和delete重载
+	6.5 输入>>输出<<的重载
+	6.6 指针运算符->的重载
+7. 类型转换
+	7.1 由其他类型向定义类的转换
+	7.2 类型转换函数
+	7.3 隐式转换带来的二义性
+8. 重载函数选择规则
+	8.1 重载函数选择规则
+	8.2 什么是完全匹配
+9. 小结
+作业
+
+---------------------------------------------------------------------------
+5. 运算符重载
+
+	首先来看一个问题：备注代码定义了一个复数类
+complex，然后用complex定义了2个复数，如何实
+现这2个复数的加法呢？
+
+//运算符重载的必要性
+#include <iostream>
+using namespace std;
+
+class complex					//定义复数类 complex
+{
+private:
+	double real, imag;			//private 成员，分别代表实部和虚部
+
+public:
+	complex(double r = 0.0, double i = 0.0)	//构造函数，带缺省参数值
+	{
+		real = r;
+		imag = i;
+	}
+
+	void disp()								//成员函数，输出复数
+	{
+		cout << real << " + " << "i*" << imag << endl;
+	}
+};
+
+int main()
+{
+	complex cx1(1.0, 2.0);
+	complex cx2(3.0, 4.0);
+	complex cxRes = cx1 + cx2;	//错误，因为point是自定义的数据类型，系统并未定义对这种自定义数据类型的加法操作
+	cxRes.disp();
+	return 0;
+}
+
+	这个问题的解决就需要用到运算符重载的知识，
+下面详细讲解。
+---------------------------------------------------------------------------
+5.1 运算符重载规则
+
+	运算符是一种通俗、直观的函数，比如：intx＝2+3;语句中的“＋”操作符，系统
+本身就提供了很多个重载版本：
+		intoperator + (int，int);
+		double operator + (double,double);
+
+可以重载的运算符有：
+	双目运算符+ -  */ %
+	关系运算符== != < > <= >=
+	逻辑运算符|| && +
+	单目运算符+ -  *&
+	自增自减运算符++ --位运算符| & ~ ^ << >>
+	赋值运算符= += -=  *= /= %= &= |= ^= <<= >>=
+	空间申请和释放new delete new[] delete[]
+	其他运算符() -> ->*, []
+	
+不能重载的运算符有：
+	成员访问符.
+	成员指针访问运算符.*
+	域运算符::
+	长度运算符sizeof
+	条件运算符号?:
+	
+不能臆造并重载一个不存在的运算符，如@, #，$等。
+
+---------------------------------------------------------------------------
+5.2 以成员函数形式重载运算符
+
+	成员函数形式的运算符声明和实现与成员函数类似，首先
+应当在类定义中声明该运算符，声明的具体形式为：
+		返回类型  operator 运算符（参数列表）;
+
+	既可以在类定义的同时定义运算符函数使其成为inline型，
+也可以在类定义之外定义运算符函数，但要使用作用域限
+定符“::”，类外定义的基本格式为：
+返回类型  类名::operator 运算符（参数列表）
+{
+	…
+}
+---------------------------------------------------------------------------
+示例：
+//成员函数形式 的 运算符重载
+#include <iostream>
+using namespace std;
+
+class complex					//定义复数类 complex
+{
+private:
+	double real, imag;			//private 成员，分别代表实部和虚部
+
+public:
+	complex(double r = 0.0, double i = 0.0)	//构造函数，带缺省参数值
+	{
+		real = r;
+		imag = i;
+	}
+
+	complex operator+= (const complex &);	//成员函数形式重载加+=
+
+	complex operator+(const complex &);	//成员函数形式重载加+
+	complex operator-(const complex &);	//成员函数形式重载减－
+	complex operator-();					//成员函数形式重载一元－（取反）
+	complex operator*(const complex &);	//成员函数形式重载乘*
+	complex operator/(const complex &);	//成员函数形式重载除*
+
+	complex& operator++();					//成员函数形式重载前置++
+	complex operator++(int);				//成员函数形式重载后置++
+
+	void disp()								//成员函数，输出复数
+	{
+		cout << real << " + " << "i*" << imag << endl;
+	}
+};
+
+complex complex::operator+=(const complex& CC)		//加+=的实现
+{
+	real += CC.real;
+	imag += CC.imag;
+	return (*this);
+}
+
+complex complex::operator+(const complex& CC)		//加+的实现
+{
+	return complex(real + CC.real, imag + CC.imag);
+}
+
+complex complex::operator-(const complex& CC)		//减-的实现
+{
+	return complex(real - CC.real, imag - CC.imag);
+}
+
+complex complex::operator*(const complex& CC)		//乘*的实现
+{
+	return complex(real * CC.real - imag * CC.imag, real * CC.imag + imag * CC.real);
+}
+
+complex complex::operator/(const complex& CC)		//除/的实现
+{
+	return complex((real * CC.real + imag + CC.imag) / (CC.real * CC.real + CC.imag * CC.imag),
+		(imag * CC.real - real * CC.imag) / (CC.real * CC.real + CC.imag * CC.imag));
+}
+
+complex complex::operator-()						//单目-，即取反的实现
+{
+	return complex(-real, -imag);
+}
+
+complex& complex::operator++()						//前置++的实现
+{
+	cout << "前置++" << endl;
+	++real;
+	++imag;
+	return (*this);
+}
+
+complex complex::operator++(int)					//后置++的实现，体会和前置++的区别	这里不能返回引用，否则结果为乱码，读者可以自己测试，并思考为什么这样。 {
+	cout << "后置++" << endl;
+	complex cTemp = (*this);	//最终的返回值的是原来的值，因此需要先保存原来的值
+	++(*this);				//返回后原来的值需要加1
+	return cTemp;
+}
+
+int main()
+{
+	complex cx1(1.0, 2.0), cx2(3.0, 4.0), cxRes;
+
+	cxRes += cx2;		//相当于cxRes.operator+=(cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 + cx2;	//相当于cx1.operator+(cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 - cx2;	//相当于cx1.operator-(cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 * cx2;	//相当于cx1.operator*(cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 / cx2;	//相当于cx1.operator/(cx2)
+	cxRes.disp();
+	
+	cxRes = -cx1;		//相当于cx1.operator-()
+	cxRes.disp();
+	
+	cout << endl;
+	
+	complex cx3(1.0, 1.0), cx4(5.0, 5.0);
+	
+	cxRes = ++cx3;		//相当于cx3.operator++()
+	cxRes.disp();
+	cx3.disp();
+
+	cout << endl;
+	
+	cxRes = cx4++;		//相当于cx4.operator++(0)
+	cxRes.disp();
+	cx4.disp();
+
+	cout << endl;
+	
+	//注意下述语句在友元函数形式和成员函数形式中的对比。
+	cxRes = cx1 + 5;	//相当于cx1.operator+(5) 或 cx1.operator+(complex(5))
+	cxRes.disp();
+
+//	cxRes = 5 + cx1;	//错误. 相当于5.operator+(cx1);
+//	cxRes.disp();
+
+	return 0;
+}
+
+---------------------------------------------------------------------------
+5.3 以友元函数形式重载运算符
+
+	用成员函数重载双目运算符时，左操作数无须用
+参数输入，而是通过隐含的this指针传入，这种
+做法的效率比较高。
+
+	此外，操作符还可重载为友元函数形式，这将没
+有隐含的参数this指针。对双目运算符，友元函
+数有2个参数，对单目运算符，友元函数有一个参
+数。
+
+	重载为友元函数的运算符重载函数的声明格式为：
+		friend 返回类型operator 运算符 (参数表);
+---------------------------------------------------------------------------	
+示例：
+//友员函数形式 的 运算符重载
+//#include <iostream>
+//using namespace std;
+#include <iostream.h>	//如果编译出错，且错误信息为"INTERNAL COMPILER ERROR",  就使用这个头文件
+
+class complex							//定义复数类complex
+{
+private:
+	double real,imag;					//private成员，分别代表实部和虚部
+
+public:
+	complex(double r=0.0,double i=0.0)	//构造函数，带缺省参数值
+	{
+		real=r;
+		imag=i;
+	}
+
+	friend complex operator + (const complex &,const complex &);	//友元函数形式重载加+
+	friend complex operator - (const complex &,const complex &);	//友元函数形式重载减－
+	friend complex operator - (const complex &);					//友元函数形式重载一元－（取反）
+	friend complex operator * (const complex &,const complex &);	//友元函数形式重载乘*
+	friend complex operator / (const complex &,const complex &);	//友元函数形式重载除*
+	friend complex& operator ++(complex &);							//友元函数形式重载前置++
+	friend complex operator ++(complex &,int);						//友元函数形式重载后置++
+
+	void disp()														//成员函数，输出复数
+	{
+		cout<<real<<" + "<<"i*"<<imag<<endl;
+	}
+};
+
+complex operator +(const complex& C1,const complex& C2)		//加+的实现
+{
+	return complex(C1.real + C2.real, C1.imag + C2.imag);
+}
+
+complex operator -(const complex& C1,const complex& C2)		//减-的实现
+{
+	return complex(C1.real - C2.real, C1.imag - C2.imag);
+}
+
+complex operator -(const complex& C1)						//单目-，即取反的实现
+{
+	return complex(-C1.real, -C1.imag);
+}
+
+complex operator *(const complex& C1,const complex& C2)		//乘*的实现
+{
+	return complex(C1.real * C2.real - C1.imag * C2.imag, C1.real * C2.imag + C1.imag * C2.real);
+}
+
+complex operator /(const complex& C1,const complex& C2)		//除*的实现
+{
+	return complex((C1.real * C2.real + C1.imag + C2.imag) / (C2.real * C2.real + C2.imag * C2.imag),
+		(C1.imag * C2.real - C1.real * C2.imag) / (C2.real * C2.real + C2.imag * C2.imag));
+}
+
+complex& operator ++(complex& C1)		//前置++的实现
+{
+	cout << "前置++" << endl;
+	C1.real += 1;
+	C1.imag += 1;
+	return C1;
+}
+
+complex operator ++(complex& C1,int)	//后置++的实现，体会和前置++的区别	这里不能返回引用，否则结果为乱码
+{
+	cout << "后置++" << endl;
+	complex ctemp = C1;
+	++C1;
+	return ctemp;
+}
+
+int main()
+{
+	complex cx1(1.0, 2.0), cx2(3.0, 4.0), cxRes;
+	
+	cxRes = cx1 - cx2;	//相当于operator-(cx1, cx2)
+	cxRes.disp();
+	
+	cxRes = -cx1;		//相当于operator-(cx1)
+	cxRes.disp();
+	
+	cxRes = cx1 + cx2;	//相当于operator+(cx1, cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 * cx2;	//相当于operator*(cx1, cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 / cx2;	//相当于operator/(cx1, cx2)
+	cxRes.disp();
+	
+	complex cx3(1.0, 1.0), cx4(5.0, 5.0);
+	
+	cxRes = ++cx3;		//相当于operator++(cx3)
+	cxRes.disp();
+	cx3.disp();
+	
+	cxRes = cx4++;		//相当于operator++(cx4, 0)
+	cxRes.disp();
+	cx4.disp();
+	
+	//注意下述语句在友元函数形式和成员函数形式的对比。
+	cxRes = cx1 + 5;	//相当于operator+(cx1, 5);
+	cxRes.disp();
+
+	cxRes = 5 + cx1;	//相当于operator+(5, cx1);
+	cxRes.disp();
+
+	return 0;
+}
+
+---------------------------------------------------------------------------
+5.4 友员函数形式和成员函数形式的比较
+
+	对于绝大多数可重载操作符来说，两种重载形式都是允许的。但
+对下标运算符[] 、赋值运算符=、函数调用运算符()、指针运算
+符->，只能使用成员函数形式重载。
+
+对于如下代码：
+	complex c1(1.0, 2.0), cRes;
+	cRes= c1 + 5; //#1
+	cRes= 5 + c1; //#2
+	
+友元函数形式重载的都是合法的，可转换成：
+	cRes= operator+(c1, 5); //#1 合法
+	cRes= operator+(5, c1); //#2 合法
+	
+但成员函数形式的重载，只有语句#1合法，语句#2非法
+	cRes= c1.operator(complex(5)); //#1 可能合法
+	cRes= 5.operator(c1); //#2 非法，5不会隐式转换成complex
+
+---------------------------------------------------------------------------
+5.5 对运算符重载的补充说明
+
+	运算符重载可以改变运算符内置的语义，如以友元函数形
+式定义的加操作符：
+complex operator +(const complex& C1,const complex& C2)
+{
+	return complex(C1.real-C2.real,C1.imag-C2.imag);
+}
+
+	明明是加操作符，但函数内却进行的是减法运算，这是合
+乎语法规则的，不过却有悖于人们的直觉思维，会引起不
+必要的混乱，因此，除非有特别的理由，尽量使重载的运
+算符与其内置的、广为接受的语义保持一致。
+
+	此外，还要注意各运算符之间的关联，比如下列几个指针
+相关的操作符：
+		[ ]、  *  、  &  、  ->
+
+	编译器对这些操作符的解释有一种“等价”关系，因此，如果
+对其中一个进行了重载，其他对应的操作符也应被重载，
+使等价操作符完成等价的功能。
+	
+---------------------------------------------------------------------------
+6. 运算符重载范例
+
+	本节重点演示几种特殊运算符的重载示例，运算
+符的重载是很灵活的工具，使用得当，会带来意
+想不到的便利。
+
+6.1 赋值运算符=
+
+	赋值运算是一种很常见的运算，如果不重载赋值运算符，
+编译器会自动为每个类生成一个缺省的赋值运算符重载函
+数，先看下面的语句：
+		对象1＝对象2;
+		
+	实际上是完成了由对象2各个成员到对象1相应成员的复制，
+其中包括指针成员，这和之前复制构造函数和缺省复制
+构造函数有些类似。如果对象1中含指针成员，并且牵扯到
+类内指针成员动态申请内存时，问题就会出现。
+
+	注意下述两个代码的不同：
+类名 对象1＝对象2; //复制构造函数
+	和
+类名 对象1; //默认构造函数
+对象1＝对象2; //赋值运算符函数
+---------------------------------------------------------------------------
+示例：
+//成员函数形式 的 运算符重载
+#include <iostream>
+using namespace std;
+
+class complex					//定义复数类 complex
+{
+private:
+	double real, imag;			//private 成员，分别代表实部和虚部
+
+public:
+	complex(double r = 0.0, double i = 0.0)	//构造函数，带缺省参数值
+	{
+		real = r;
+		imag = i;
+	}
+	complex operator= (const complex & c1)
+	{
+		this->real = c1.real;
+		this->imag = c1.imag;
+		cout<<"系统默认的赋值重载函数\n";
+		return *this;
+	}
+	void disp()								//成员函数，输出复数
+	{
+		cout << real << " + " << "i*" << imag << endl;
+	}
+};
+
+int main()
+{
+	complex cx1(1.0, 2.0), cx2, cxRes;
+	complex c = cx1;//复制构造函数
+	cx2 = (cxRes = cx1);//调用赋值运算符重载函数
+
+	cxRes.disp();
+	cx2.disp();
+
+	return 0;
+}
+---------------------------------------------------------------------------
+/*C++编译器默认提供：
+	构造函数，析构函数，复制构造函数，赋值运算符重载函数
+如果类里面有指针成员变量时，以上4个函数都必须自己定义*/
+//赋值运算符重载。如果没有，执行时会出错.
+#include <iostream>
+using namespace std;
+
+class computer
+{
+private:
+	char *brand;						//字符指针brand
+	float price;
+
+public:
+	computer()							//无参构造函数
+	{
+		brand = NULL;					//brand初始化为NULL
+		price = 0;
+		cout << "无参构造函数被调用" << endl;
+	}
+
+	computer(const char* sz,float p)
+	{
+		brand = new char[strlen(sz)+1];	//构造函数中为brand分配一块动态内存
+		strcpy(brand, sz);				//字符串复制
+		price = p;
+		cout << "带参构造函数被调用" << endl;
+	}
+
+	computer(const computer& cp)		//复制构造函数
+	{
+		brand = new char[strlen(cp.brand) + 1];	//为brand分配动态内存
+		strcpy(brand, cp.brand);		//字符串复制
+		price = cp.price;
+		cout << "复制构造函数被调用" << endl;
+	}
+
+//	//如果我们没有重载=，则系统会隐式的重载成如下形式:
+//	computer &operator=(const computer &cp)
+//	{
+//		price = cp.price;
+//		brand = cp.brand;
+//		cout<<"系统默认赋值函数被调用"<<endl;
+//		return (*this);
+//	}
+//
+//	//应该使用下述函数取代上述系统隐式的定义
+//	computer &operator=(const computer &cp)		//成员函数形式重载赋值运算符
+//	{
+//		if (this==&cp)							//首先判断是否是自赋值，是的话返回当前对象
+//			return  (*this);
+//
+//		price=cp.price;							//如果不是自赋值，先对price赋值
+//		delete[] brand;							//防止内存泄露，先释放brand指向的内容
+//		brand=new char[strlen(cp.brand)+1];		//为brand重新开辟一块内存空间
+//		if (brand!=NULL)						//如果开辟成功
+//		{
+//			strcpy(brand,cp.brand);				//复制字符串
+//		}
+//		cout<<"赋值运算符重载函数被调用"<<endl;
+//
+//		return  (*this);										//返回当前对象的引用，为的是实现链式赋值
+//	}
+
+	~computer()							//析构函数，释放动态内存，delete[] NULL不会出错
+	{
+		delete[] brand;
+		cout << "析构函数被调用" << endl;
+	}
+
+	void print()						//成员函数，输出信息
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer com1("Dell", 2000);	//调用含参构造函数声明对象com1
+	computer com2 = com1;			//调用复制构造函数
+
+	if (true)
+	{
+		computer com3;				//调用无参构造函数
+		com3 = com1;				//调用赋值运算符重载函数
+	}
+
+	return 0;
+}
+	
+---------------------------------------------------------------------------
+6.2 函数调用运算符()
+
+	函数调用运算符()同样只能重载为成员函数形式。其形式为：
+返回类型 operator()(arg1,arg2,……)
+参数个数可以有多个，没有限制。
+
+针对如下定义：
+	void computer::operator()(){};
+	int computer::operator()(intx){};
+	char computer::operator()(charx, char y){};
+可以这样调用：
+	computer com1;
+	intz = com1(3200);
+	char c = com1(‘a’, ‘b’);
+	
+	一个类如果重载了函数调用operator()，就可以将该类对象作为
+一个函数使用，这样的类对象也称为函数对象。函数也是一种对
+象，这是泛型思考问题的方式。
+
+示例：
+//重载函数调用运算符()
+#include <iostream>
+using namespace std;
+
+class A
+{
+private:
+	int n;
+public:
+	A(int nn = 0)
+	{
+		n = nn;
+	}
+	void operator() ()
+	{
+		cout << "无参函数运算符重载, n = " << n << 
+
+endl;
+	}
+	void operator() (int x) // void fun(int x)
+	{
+		cout << "有参函数运算符重载, n = " << n << ", x = " << x << endl;
+	}
+	int operator() (int x, int y) 
+	{
+		return x + y;
+	}
+};
+int main()
+{
+	A fun(5);
+	fun(10);
+	fun();
+	int sum = fun(1, 2);
+	cout<<"sum = "<<sum<<endl;
+	return 0;
+}
+
+---------------------------------------------------------------------------
+6.3 下标运算符[]
+
+下标运算符是个二元运算符，C++编译器将表达式
+	sz[x];
+解释为
+	sz.operator[](z);
+	
+一般情况下，下标运算符的重载函数原型如下：
+	返回类型& operator[ ](参数类型);
+
+	下标运算符的重载函数只能有一个参数，不过该参数并没
+有类型限制，任何类型都可以，如果类中未重载下标运算
+符，编译器将会给出下标运算符的缺省定义，此时，参数
+必须是int型，并且要声明数组名才能使用下标变量，如
+computer com[3];
+
+	则com[1]等价于com.operator[](1)，如果[]中的参数类型
+非int型，或者非对象数组要使用下标运算符时，需要重载
+下标运算符[]。
+
+示例：
+//[]下标运算符被重载
+#include <iostream>
+using namespace std;
+
+class A
+{
+private:
+	int count;
+	int * p;
+public:
+	A(int count1 = 0)
+	{
+		count = count1;
+		p = new int[count];
+	}
+	int& operator[] (int i)
+	{
+		if(i < 0 || i > count - 1)
+		{
+			cout << "下标越界"<<endl;
+			return p[count - 1];
+		}
+		cout<<"[]运算符被调用\n";
+		return p[i];
+	}
+
+};
+int main()
+{
+	A a(5);
+	a[2] = 10;
+	a[3] = 11;
+	a[8] = 9;
+	cout<<a[2]<<endl;
+	cout<<a[3]<<endl;
+	cout<<a[4]<<endl;
+	return 0;
+}
+
+---------------------------------------------------------------------------
+6.4 new和delete重载
+
+	通过重载new和delete,我们可以自己实现内存的管理策略。new和delete
+只能重载为类的静态运算符。而且重载时，无论是否显示指定static关键
+字，编译器都认为是静态的运算符重载函数。
+
+	重载new时，必须返回一个void *类型的指针，它可以带多个参数，但第1
+个参数必须是size_t类型，该参数的值由系统确定。
+static void *operator new(size_t nSize)
+{
+	cout<< "new操作符被调用, size = " << nSize<< endl;
+	void * pRet= new char[nSize];
+	return pRet;
+}
+
+	重载delete时必须返回void类型，它可以带有多个参数，第1个参数必须
+是要释放的内存的地址void *，如果有第2个参数，它必须为size_t类型。
+static void operator delete(void * pVoid)
+{
+	cout<< "delete操作符被调用." << endl;
+	delete [] pVoid;
+}
+
+	一个类可以重载多个new运算符，但是只能重载一个delete类运算符。
+---------------------------------------------------------------------------
+示例：
+//new 和 delete 运算符重载
+#include <iostream>
+using namespace std;
+
+class CStudent
+{
+public:
+	int iId;
+	char szName[10];
+
+public:
+	static void * operator new(size_t nSize)
+	{
+		cout << "new 操作符被调用, size = " << nSize << endl;
+		void * pRet = new char[nSize];
+		return pRet;
+	}
+
+	static void operator delete(void * pVoid)
+	{
+		cout << "delete 操作符被调用." << endl;
+		delete [] pVoid;
+	}
+};
+
+int main()
+{
+	CStudent *pStu = new CStudent();
+
+	pStu->iId = 101;
+	strcpy(pStu->szName, "Tony");
+
+	delete pStu;
+
+	return 0;
+}
+
+---------------------------------------------------------------------------
+6.5 输入>>输出<<的重载
+
+	>>和<<运算符只能重载为友元函数形式。
+	
+对操作符<<的重载：
+friend ostream& operator<<(ostream& os,Complex& C1)
+{
+	os<<C1.real<<"+i*"<<C1.imag<<endl;
+	return os;
+}
+
+对操作符>>的重载：
+friend istream& operator>>(istream& is,Complex& C1)
+{
+	is>>C1.real;
+	while (is.get()!='*‘);
+	cin>>C1.imag;
+	return is;
+}
+
+示例：
+//对操作符>>的重载
+#include <iostream>
+using namespace std;
+
+//http://blog.csdn.net/mzlogin/archive/2009/04/19/5177784.aspx
+//解决VC6.0中友元方式重载运算符时无法访问类私有成员的方法：
+//		在类定义之前将类和友元操作符函数的原型提前声明一下.
+class Complex;
+ostream & operator<<(ostream &os, Complex &C1); //对操作符<<的重载
+istream & operator>>(istream &is, Complex &C1);
+
+class Complex
+{
+private:
+	double imag;		//虚部
+	double real;		//实部
+public:
+	Complex(double r=0.0,double i=0.0)			//构造函数
+	{
+		real=r;
+		imag=i;
+	}
+	friend ostream& operator<<(ostream& ,Complex& );		//友元函数声明
+	friend istream& operator>>(istream& ,Complex& );
+};
+
+ostream& operator<<(ostream& os,Complex& C1)			//对操作符<<的重载
+{
+	os<<C1.real<<"+i*"<<C1.imag<<endl;
+	return os;
+}
+
+istream& operator>>(istream& is,Complex& C1)			//对操作符>>的重载
+{
+	is>>C1.real;
+	while (is.get()!='*')
+	{
+	}
+	cin>>C1.imag;
+	return is;
+}
+
+int main()
+{
+	Complex c1(2.5,3.1);
+	cin>>c1;
+	cout<<c1;
+	return 0;
+}
+
+---------------------------------------------------------------------------
+6.6 指针运算符->的重载
+
+示例：
+//->操作符重载
+#include <iostream>
+using namespace std;
+
+class CData
+{
+public:
+	int GetLen() {return 5;}
+};
+
+class CDataPtr
+{
+private:
+	CData *m_pData;
+
+public:
+	CDataPtr()
+	{
+		m_pData = new CData;
+	}
+
+	~CDataPtr()
+	{
+		delete m_pData;
+	}
+
+	//->操作符重载
+	CData * operator->()
+	{
+		cout << "->操作符重载函数被调用." << endl;
+		return m_pData;
+	}
+};
+
+int main()
+{
+	CDataPtr p;
+	cout << p->GetLen() << endl;	//等价于下面1句:
+	cout << (p.operator->())->GetLen() << endl;
+
+	return 0;
+}
+
+---------------------------------------------------------------------------
+7. 类型转换
+
+	前面已经对普通变量的类型转换进行了介绍，本
+节来讨论类对象和其他类型对象的转换。
+
+转换场合有：
+	赋值转换
+	表达式中的转换
+	显式转换
+	函数调用，传递参数时的转换
+	
+转换方向有：
+	由自定义类型向其他类型的转换
+	由其他类型向自定义类类的转换
+---------------------------------------------------------------------------
+7.1 由其他类型向定义类的转换
+	
+	由其他类型（如int、double）等向自定义类的转换是由构
+造函数来实现的，只有当类的定义和实现中提供了合适的
+构造函数时，转换才能通过。什么样的构造函数才是合适
+的构造函数呢？主要有以下几种情况，为便于说明，假设
+由int类型向自定义point类转换：
+	point类的定义和实现中给出了仅包括只有一个int类型
+参数的构造函数
+	point类的定义和实现中给出了包含一个int类型参数，
+且其他参数都有缺省值的构造函数
+	point类的定义和实现中虽然不包含int类型参数，但包
+含一个非int类型参数如float类型，此外没有其他参数
+或者其他参数都有缺省值，且int类型参数可隐式转换
+为float类型参数。
+
+	在构造函数前加上关键字explicit可以关闭隐式类型转换
+	
+示例：
+//由其他类型转换到自定义类型
+#include <iostream>
+using namespace std;
+
+class point		//point类定义
+{
+private:		//private成员列表
+	int xPos;
+	int yPos;
+
+public:
+//	explicit //如果在构造函数前加上explicit, 就不允许 point pt1 = 5这种隐式转换了
+	point(int x = 0, int y = 0)	//构造函数，带缺省参数，两个int型变量
+	{
+		xPos = x;
+		yPos = y;
+	}
+
+	void print()				//输出函数，点的信息
+	{
+		cout << "( " << xPos << " , " << yPos << " )" << endl;
+	}
+};
+
+int main()
+{
+	point p = 5;	//隐式转换，把int转换为point型需要合适的构造函数
+	p.print();
+	p = 1.5;		/*因为1.5是double类型，可以自动转换为int型，
+					再通过构造函数由int型隐式转换为point型*/
+	p.print();
+	return 0;
+}
+
+---------------------------------------------------------------------------
+7.2 类型转换函数
+
+	可以通过operator int()这种类似操作符重载函
+数的类型转换函数来实现由自定义类型向其他类
+型的转换。如将point类转换成int类型等。
+
+	在类中定义类型转换函数的形式一般为：
+		operator 目标类型名();
+		
+有以下几个使用要点：
+	转换函数必须是成员函数，不能是友元形式。
+	转换函数不能指定返回类型，但在函数体内必
+须用return语句以传值方式返回一个目标类型
+的变量。
+	转换函数不能有参数。
+	
+示例：
+//类型转换函数(由自定义类型转换成其他类型)
+#include <iostream>
+using namespace std;
+class A
+{
+	int n;
+public:
+	A(int m = 0)
+	{
+		n = m;
+		cout<<"A的构造函数被调用"<<endl;
+	}
+	void print()
+	{
+		cout<<"A: n = "<<n<<endl;
+	}
+};
+class B
+{
+public:
+	int n; 
+	operator int()
+	{
+		cout<<"运算符重载，类型转换被调用\n";
+		return this->n;	//或者 return n;
+	}
+
+	operator A()
+	{
+		cout<<"运算符重载，类型转换被调用\n";
+		return A(this->n);
+	}
+};
+
+int main()
+{
+	A a; 	
+	B b;
+	b.n = 100; 
+	int n = b;	//或者int n = int(b)也是一样调用类型转换函数
+	cout<<"n = "<<n<<endl;
+	a = A(b);//强制转换或者类型转换
+	a.print();
+	return 0;
+}
+
+---------------------------------------------------------------------------
+7.3 隐式转换带来的二义性
+
+	如果在代码9-13的main函数中加入一条数据语句
+“cout<<p1;”，编译器将会给出如下错误：
+error C2593: 'operator <<' is ambiguous
+
+	此时，编译器无法确定应该将p1隐式转换成int型还是
+double型，这称为转换的二义性，解决的方法由很多种：
+	1. 显式转换。
+	2. 在point类中重载操作符<<，这样，便不会发生任何的
+隐式转换。关于操作符<<的重载将在第14章中进行介绍
+(代码14-26)，同时，这还牵扯到多个重载函数的选择
+机制，在稍后会有介绍。
+
+示例：
+//隐性转换带来的二义性
+#include <iostream>
+using namespace std;
+
+class point;
+ostream & operator<<(ostream &os, const point &pt);
+
+class anotherPoint					//anotherPoint类定义
+{
+private:							//private成员列表
+	double x;
+	double y;
+
+public:
+	anotherPoint(double xx = 1.11, double yy = 1.11)//构造函数，带缺省参数值
+	{
+		x = xx;
+		y = yy;
+	}
+
+	void print()					//成员函数，输出点的信息
+	{
+		cout << "( " << x << " , " << y << " )" << endl;
+	}
+};
+
+class point							//Point类定义
+{
+private:							//private成员列表
+	int xPos;
+	int yPos;
+
+public:
+	point(int x = 0, int y = 0)		//构造函数，带缺省参数值
+	{
+		xPos = x;
+		yPos = y;
+	}
+
+	void print()					//成员函数，输出点的信息
+	{
+		cout << "( " << xPos << " , " << yPos << " )" << endl;
+	}
+
+	friend ostream & operator<<(ostream &os, const point &pt);	// 重载<<运算符
+
+	operator int()					//定义Point向int型的转换函数int()
+	{
+		return xPos;
+	}
+
+	operator double()				//定义Point向double型的转换函数double()
+	{
+		return xPos * yPos;
+	}
+
+	operator anotherPoint()			//定义Point向anotherPoint型的转换函数anotherPoint()
+	{
+		return anotherPoint(xPos, yPos);
+	}
+};
+
+ostream & operator<<(ostream &os, const point &pt)
+{
+	os << (pt.xPos * 100);
+	return os;
+}
+
+int main()
+{
+	point p1(4, 5);			//声明一个point类变量p1
+	p1.print();
+
+	//隐式转换带来的二义性
+	cout << p1 << endl;				//如果删除<<重载函数, 这句就会报错, 因为编译器不知道是使用int还是double类型转换函数
+	cout << (int)p1 << endl;		//正确, 指明了int转换
+	cout << (double)p1 << endl;		//正确, 指明了double转换
+
+	return 0;
+}
+
+	就以上代码而言，如果在point类中只定义了int型转换函
+数或double型转换函数，编译器不会报错，因为此时只有
+一个可选转换，不会发生二义性错误。
+
+---------------------------------------------------------------------------
+8. 重载函数选择规则
+	
+	上一节讨论了隐式转换的二义性，实际上，隐式转换和重
+载函数的选择规则也有紧密的联系，以和为例，编译器将
+complex c1(1.0,2.0),cRes;
+cRes=c1+5;
+
+解释为：
+	complex c1(1.0,2.0),cRes;
+	cRes=c1+complex(5,0);
+	
+可如果在complex类中定义了double型的转换函数，问题的
+答案似乎变得有些模糊。
+	选择1：cRes=complex(double(c1)+5,0);
+	选择2：cRes=c1+complex(5,0);
+	
+	实际上，编译器选择第1种方案执行，本节讨论重载函数的
+选择规则。
+---------------------------------------------------------------------------
+示例：
+#include <iostream>
+using namespace std;
+
+class point;
+ostream & operator<<(ostream &os, const point &pt);
+
+class anotherPoint					//anotherPoint类定义
+{
+private:							//private成员列表
+	double x;
+	double y;
+
+public:
+	anotherPoint(double xx = 1.11, double yy = 1.11)//构造函数，带缺省参数值
+	{
+		x = xx;
+		y = yy;
+	}
+
+	void print()					//成员函数，输出点的信息
+	{
+		cout << "( " << x << " , " << y << " )" << endl;
+	}
+};
+
+class point							//Point类定义
+{
+private:							//private成员列表
+	int xPos;
+	int yPos;
+
+public:
+	point(int x = 0, int y = 0)		//构造函数，带缺省参数值
+	{
+		xPos = x;
+		yPos = y;
+	}
+
+	void print()					//成员函数，输出点的信息
+	{
+		cout << "( " << xPos << " , " << yPos << " )" << endl;
+	}
+
+	friend ostream & operator<<(ostream &os, const point &pt);	// 重载<<运算符
+
+	point operator+(point &pt)
+	{
+		return point(xPos + pt.xPos, yPos + pt.yPos);
+	}
+
+	operator int()					//定义Point向int型的转换函数int()
+	{
+		return xPos;
+	}
+
+	operator double()				//定义Point向double型的转换函数double()
+	{
+		return xPos * yPos;
+	}
+
+	operator anotherPoint()			//定义Point向anotherPoint型的转换函数anotherPoint()
+	{
+		return anotherPoint(xPos, yPos);
+	}
+};
+
+ostream & operator<<(ostream &os, const point &pt)
+{
+	os << (pt.xPos * 100);
+	return os;
+}
+
+int main()
+{
+	point p1(4, 5);			//声明一个point类变量p1
+	p1.print();
+
+	//重载函数选择
+	point p2;
+//	p2 = p1 + 5;			//错误, +二义性. 是(int)p1还是point(5)? 最终结果是(9, 0)还是(9, 5)?
+	p2 = (int)p1 + 5;		//等价于point((int)p1 + 5), 继续等价于point((int)p1 + 5, 0)
+	p2.print();
+
+	p2 = p1 + (point)5;		//先调用构造函数point(5, 0), 再调用+重载函数, 然后调用默认赋值函数
+	p2.print();
+
+	return 0;
+}
+---------------------------------------------------------------------------
+8.1 重载函数选择规则
+
+	在函数重载的情况下，C++编译器需要一套合理的规则来决
+定函数调用使用哪一个函数定义，这个过程称为重载解析
+（overloading resolution），该过程大致有几下几步：
+（1）筛选出参数数目正确的函数定义
+因为参数缺省值的存在，“数目正确”似乎不太好定义，可解
+释为“参数数目小于等于函数参数列表中的参数个数，且大
+于等于函数参数列表中没有缺省值的参数个数”。
+（2）进一步根据参数类型的对应筛选合适的函数定义
+对应参数的类型应一致，或存在一个隐式转换。这一步筛
+选后的函数定义都是可执行的版本，下一步是选择最优的
+过程。
+（3）选择最优，确定最佳方案
+	
+---------------------------------------------------------------------------
+8.2 什么是完全匹配
+
+	除了参数的类型和个数均一致外，C++默认下列看
+似不一致的转换也属于“完全匹配”，如我们课件Xmind中图所示。
+---------------------------------------------------------------------------
+9. 小结
+
+	1. 讨论了面向对象编程的一些概念，首先，
+对类作用域、类定义的作用域和可见域以及对象
+的生存期、作用域和可见性进行了介绍.
+
+	2. C++引入了友元机制来对类的接口进行扩展，大大
+提高了外部访问的灵活性，但这在一定程度上也
+破坏了类的封装性、违反了信息隐藏的原则，因
+此，对友元的使用要合理，好钢用在刀刃上。
+
+	3. 运算符重载是很重要的内容，合理重载运算符使
+得程序编写简便灵活而且高效，除了极个别的运
+算符外，绝大多数的运算符都可被重载。运算符
+重载有成员函数形式和友元函数形式两种，两种
+方式各有优缺点，对一些运算符来说，只能采用
+成员函数的形式。
+
+---------------------------------------------------------------------------
+作业:
+	1. 复习今天所学内容；
+	2.完善上一章关于CDate类的作业，实现：
+		1>. 日期的赋值=操作。
+		2>. 日期的++和--操作，包括前置和后置。
+		3>. 日期的+=和-=操作。
+		4>. 两个日期的减法操作，以计算2天之间的天数差。
+
+---------------------------------------------------------------------------

@@ -1,0 +1,56 @@
+
+类的静态成员
+
+静态成员：
+	以static开头，静态数据成员为各个对象共有，不属于某个具体的对象，所有对象都可以
+对它进行引用，都可以读取和修改。若一个对象修改了该静态成员的值，则在其他各个对象
+中该数据成员的值都会同时改变。
+
+	定义类时就为静态数据成员分配空间，不随对象的建立而分配空间；
+	定义完类之后就可以引用。
+	
+引用方法：
+	类名::静态成员
+	对象名.静态成员
+	
+	在类的静态数据成员仅仅是对该成员的声明，同时还需要在类外部进行定义；
+	
+静态成员函数：
+	在声明成员函数时在函数前添加static关键字就定义了静态成员函数。
+	与静态数据成员一样，静态成员函数也是类的一部分。两种引用的方法。
+	
+	静态成员函数一般是为了处理静态数据成员。
+	与一般成员函数的区别：非静态成员函数有this指针，静态成员函数没有this指针。
+												因为它可以在未定义类对象时就可以引用。因此静态成员函数不能
+												访问本类中的非静态成员。(成员函数和数据成员)
+
+示例：
+time.h
+#ifndef TIME_H
+#define TIME_H
+class CTime{
+public:
+	CTime();
+	CTime(int hour, int minute, int second = 0);
+	CTime(int value);
+	CTime(CTime &time);
+	~CTime();
+	void setHour(int hour);
+	void setMinute(int minute);
+	void setSecond(int second);
+	
+	int getHour();
+	int getMinute();
+	int getSecond();
+private:
+	int m_nHour;
+	int m_nMinute;
+	int m_nSecond;
+	
+	static int m_nNum;	//不能在类内初始化，需要在类外初始化
+};
+
+#endif
+-----------------------------------
+time.cpp
+int CTime::m_nNum = 0;

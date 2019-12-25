@@ -1,0 +1,436 @@
+#include <iostream>
+using namespace std;
+class point
+{
+private:
+	int xPos;
+	int yPos;
+public:
+	point()//默认的构造函数
+	{
+		cout<<"hello"<<endl;
+	}
+
+	~point()//默认的析构函数
+	{
+		cout<<"world"<<endl;
+	}
+};
+void main()
+{
+	point p;
+	point p1;
+	point * p2 = new point;
+	delete(p2);
+}
+
+
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int xPos;
+	int yPos;
+public:
+	point(int x, int y) //有参构造函数
+	{
+		cout << "对象创建时构造函数被自动调用" << endl;
+		xPos = x;
+		yPos = y;
+	}
+	void print() //输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+//#include "point.h"
+int main()
+{
+//	point pt0;			//错误的调用，因为我们已经显示的定义了一个带参数的构造函数
+//	pt0.print();		//输出pt0的信息
+	point pt1(3, 4);	//调用有参构造函数声明point类变量（类对象）pt1
+	pt1.print();		//输出pt1的信息
+	return 0;
+}
+
+
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分泌诶代表x轴和y轴坐标
+	int xPos;
+	int yPos;
+public:
+	point(int x, int y)//有参构造函数
+	{
+		cout << "有参构造函数的调用" << endl;
+		xPos = x;
+		yPos = y;
+	}
+	point() //无参构造函数
+	{
+		cout << "无参构造函数的调用" << endl;
+		xPos = 0;
+		yPos = 0;
+	}
+	void print()//输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+#include "point.h"
+int main()
+{
+	point pt1(3, 4);	//调用有参构造函数声明point类变量（类对象）pt1
+	pt1.print();		//输出pt1的信息
+	point pt2;			//调用无参构造函数声明point类变量（类对象）pt2
+	pt2.print();		//输出pt2的信息
+	return 0;
+}
+
+
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int xPos;
+	int yPos;
+public:
+	point(int x = 0, int y = 0) //有参构造函数
+	{
+		cout << "对象创建时构造函数被自动调用" << endl;
+		xPos = x;
+		yPos = y;
+	}
+	void print() //输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+
+
+#include "point.h"
+int main()
+{
+	point pt0;		//两个值都采用默认值
+	pt0.print();		
+	point pt1(3, 4);	//两个参数都不采用默认值
+	pt1.print();		//输出pt1的信息
+	return 0;
+}
+
+
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int yPos;
+	int xPos;
+public:
+	point(int x = 0, int y = 0): yPos(y), xPos(yPos)//初始化表达式
+	{
+		cout << "两个参数的构造函数被自动调用" << endl;
+//		xPos = 10;
+//		yPos = 20;
+	}
+
+	void print() //输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+int main()
+{
+	point p1(3, 4);
+	p1.print();
+	return 0;
+}
+
+
+#include <iostream>
+#include <cstring>
+using namespace std;
+class computer
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(const char * sz, float p)
+	{
+		brand = new char[strlen(sz) + 1]; //对象创建时为brand分配一块动态内存
+		strcpy(brand, sz); //字符串复制
+		price = p;
+	}
+	~computer()
+	{
+		delete[] brand; //对象别撤销时，释放内存，避免泄露
+		brand = NULL;
+		cout << "清理现场" << endl;
+	}
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer comp("Dell", 7000); //调用构造函数声明computer变量comp
+	comp.print(); //信息输出
+	return 0;
+}
+
+
+/*由于只是申请内存而没有释放，该程序运行很快就会把内存耗尽，然后程序崩溃*/
+#include <iostream>
+#include <cstring>
+using namespace std;
+class computer
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(char * sz, float p)
+	{
+	//	brand = sz;
+		cout<<"构造函数被调用\n";
+		brand = new char[1000000];//
+		strcpy(brand, sz);
+		price = p;
+	}
+	~computer()
+	{
+//		delete []brand;
+		cout<<"析构函数被调用\n";
+	}
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+void fun()
+{
+	computer comp("Dell", 7000); //调用构造函数声明computer变量comp
+//	comp.print(); //信息输出
+	computer comp1("xyddddddd", 3000);
+//	comp1.print();
+}
+int main()
+{
+	while(1)
+		fun();//内存很快就被耗尽了
+	getchar();
+	return 0;
+}
+
+
+
+void main()
+{
+	int m = 10; 
+	const int &n = m;
+	n = 20;//错误，用const修饰的引用不能改变它引用的变量的值
+}
+
+关于全局对象：
+全局对象的构造函数是在main()函数之前调用的，析构函数是在main函数之后调用的。
+如果全局对象的析构函数没打印出来，是因为VC6编译器太老了，但是析构函数却是调用了，可以换个别的环境，VC对C++标准支持不太好。
+
+如果非要在VC6中看到析构函数调用，将#include <iostream>
+using namespace std;
+这两句换成#include <iostream.h>试试。
+
+
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+class computer
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(const char * sz, float p)
+	{
+		brand = new char[strlen(sz) + 1]; //对象创建时为brand分配一块动态内存
+		strcpy(brand, sz); //字符串复制
+		price = p;
+	}
+
+	~computer()
+	{
+//		if(brand != NULL)
+//		{
+			delete[] brand; //对象别撤销时，释放内存，避免泄露
+//			brand = NULL;	//如果注释掉本句，则在显式调用析构
+						//函数后，退出时会因为重复释放而报内存错误
+//		}
+
+		cout << "清理现场" << endl;
+	}
+
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer comp("Dell",7000);
+	comp.print();
+	comp.~computer();//显式调用析构函数，合法，comp被撤销
+	return 0;
+}	//注意这里comp对象释放时析构函数也被隐式调用了一次
+
+
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int xPos;
+	int yPos;
+public:
+	point(int x = 0, int y = 0): xPos(x), yPos(y)//初始化表达式
+	{
+		cout << "两个参数的构造函数被自动调用" << endl;
+	}
+	point(const point & pa)
+	{
+		cout<<"默认的复制构造函数被调用\n";
+		xPos = pa.xPos;
+		yPos = pa.yPos;
+	}
+	void print()//输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+	~point()
+	{
+		cout<<"析构函数被调用\n";
+	}
+};
+
+int main()
+{
+	point p1(1, 2);
+	p1.print();
+	point p2 = p1;//或point p2(p1) 当用一个对象去初始化另一个对象的时候，会调用复制构造函数
+
+	p2.print();
+	return 0;
+}
+
+
+#include <iostream>
+using namespace std;
+
+class computer
+{
+private:
+	char * brand;
+	float price;
+
+public:
+	computer(const char * sz, float p)
+	{
+		brand = new char[strlen(sz) +1]; //构造函数中为brand指针动态分配内存
+		strcpy(brand, sz);
+		price = p;
+	}
+	
+//	computer(const computer &cp)	//默认的复制构造函数的实现如下:
+//	{
+//		brand = cp.brand;	//对指针变量不能这样直接赋值，这是引起错误的根源
+//		price = cp.price;
+//	}
+
+	~computer()
+	{
+		delete[] brand; //析构函数中释放申请到的动态内存
+		cout << "清理现场" << endl;
+	}
+	
+	void print()
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer comp1("Dell", 7000); //声明computer类对象comp，并初始化
+	comp1.print();
+	computer comp2(comp1); //调用缺省的复制构造函数
+	comp2.print();
+	return 0;
+}
+
+
+
+#include <iostream>
+#include <cstring>
+using namespace std;
+class computer  /*当类里有指针成员的时候，我们要自己定义构造函数，析构函数，
+复制构造函数，赋值运算符重载函数*/
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(char * sz, float p)
+	{
+	//	brand = sz;
+		cout<<"构造函数被调用\n";
+		brand = new char[strlen(sz)+1];//5个字节
+		strcpy(brand, sz);
+		price = p;
+	}
+	computer(const computer & obj)//拷贝构造函数 
+	{
+		cout<<"默认的复制构造函数被调用\n";
+	//	brand = obj.brand;//浅拷贝：只是复制一个地址过来
+		brand = new char[strlen(obj.brand)+1];// 深拷贝：自己申请堆内存
+		strcpy(brand, obj.brand);
+		price = obj.price;
+	}
+	~computer()
+	{
+		cout<<"析构函数被调用\n";
+		delete []brand;
+		brand = NULL;
+	}
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{	computer comp("Dell", 7000); //调用构造函数声明computer变量comp
+	comp.print(); //信息输出
+	computer comp1 = comp;
+	comp1.print();
+	return 0;
+}
+
+
+

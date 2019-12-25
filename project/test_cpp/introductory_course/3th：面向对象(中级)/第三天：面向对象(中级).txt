@@ -1,0 +1,1517 @@
+东莞上億电控  电子有限公司
+
+
+
+第三天：面向对象(中级)
+
+1.初始化表达式
+2.析构函数
+	2.1 显式调用析构函数
+3. 复制构造函数
+	3.1 复制构造函数调用机制
+	3.2 缺省复制构造函数带来的问题
+	3.3 关于构造函数和复制构造函数
+4. 构造函数调用示例
+5. 特殊数据成员的初始化
+	5.1 const数据成员的初始化
+	5.2 引用成员的初始化
+	5.3 类对象成员的初始化
+	5.4 特别知识
+	5.5 static数据成员的初始化
+6. 特殊函数成员
+	6.1 静态成员函数
+	6.2 const与成员函数
+7. 对象的组织
+	7.1 const对象和const对象引用
+	7.2 指向对象的指针
+	7.3 对象的大小(sizeof)
+	7.4 this指针
+	7.5 对象数组
+	7.6 对象链表
+8. 为对象动态分配内存
+	8.1  使用new和delete为单个对象分配/释放动态内存
+	8.2  使用new和delete[]为对象数组分配/释放动态空间
+	8.3 malloc和free不能为对象动态申请内存
+总结
+课后作业
+
+---------------------------------------------------------------------------
+1.初始化表达式
+
+	除了在构造函数体内初始化数据成员外，还可以通过成员初始化表达式来
+完成。成员初始化表达式可用于初始化类的任意数据成员（后面要介绍的
+static数据成员除外），该表达式由逗号分隔的数据成员表组成，初值放
+在一对圆括号中。只要将成员初始化表达式放在构造函数的头和体之间，
+并用冒号将其与构造函数的头分隔开，便可实现数据成员表中元素的初始
+化。
+
+例如：
+point(int x,int y){
+	cout << "有参构造函数的调用" << endl;
+	xPos = x;
+	yPos = y;
+}
+等价于：
+point(int x, int y):xPos(x),yPos(y){
+	cout << "有参构造函数的调用" << endl;
+}
+
+注意：
+	每个成员在初始化表中只能出现一次。
+	初始化的顺序不是由成员变量在初始化表中的顺序决定的，
+而是由成员变量在类中被申明时的顺序决定的。
+---------------------------------------------------------------------------
+示例：
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int yPos;
+	int xPos;
+public:
+	point(int x = 0, int y = 0): yPos(y), xPos(yPos)//初始化表达式
+	{
+		cout << "两个参数的构造函数被自动调用" << endl;
+//		xPos = 10;
+//		yPos = 20;
+	}
+
+	void print() //输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+int main()
+{
+	point p1(3, 4);
+	p1.print();
+	return 0;
+}
+---------------------------------------------------------------------------
+
+2.析构函数
+
+	构造函数在创建对象时被系统调用，而析构函数在对象被
+撤销时被自动调用，相比构造函数，析构函数要简单的多。
+析构函数有如下特点：
+	1> 与类同名，之前冠以波浪号，以区别于构造函数。
+
+	2> 析构函数没有返回类型，也不能指定参数，因此，析构
+	函数只能有一个，不能被重载。
+	3> 对象超出其作用域被销毁时，析构函数会被自动调用。
+
+	如果用户没有显式地定义析构函数，编译器将为类生成“缺
+省析构函数”，缺省析构函数是个空的函数体，只清除类的
+数据成员所占据的空间，但对类的成员变量通过new和
+malloc动态申请的内存无能为力，因此，对于动态申请的
+内存，应在类的析构函数中通过delete或free进行释放，
+这样能有效避免对象撤销造成的内存泄漏。
+---------------------------------------------------------------------------
+示例：
+#include <iostream>
+#include <cstring>
+using namespace std;
+class computer
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(const char * sz, float p)
+	{
+		brand = new char[strlen(sz) + 1]; //对象创建时为brand分配一块动态内存
+		strcpy(brand, sz); //字符串复制
+		price = p;
+	}
+	~computer()
+	{
+		delete[] brand; //对象别撤销时，释放内存，避免泄露
+		brand = NULL;
+		cout << "清理现场" << endl;
+	}
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer comp("Dell", 7000); //调用构造函数声明computer变量comp
+	comp.print(); //信息输出
+	return 0;
+}
+---------------------------------------------------------------------------
+
+2.1 显式调用析构函数
+	
+	程序员不能显式调用构造函数，但却可以调用析
+构函数控制对象的撤销，释放对象所占据的内存
+空间，以更高效地利用内存。如：
+#include "computer.h"
+int main()
+{
+	computer comp("Dell",7000);
+	comp.print();
+	comp.~computer();//显式调用析构函数，comp被撤销
+	return 0;
+} //注意这里comp对象释放时析构函数也被隐式调用了一次
+	
+	虽然可以显式调用析构函数，但不推荐这样做，
+因为可能带来重复释放指针类型变量所指向的内
+存等问题。
+
+示例：
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+class computer
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(const char * sz, float p)
+	{
+		brand = new char[strlen(sz) + 1]; //对象创建时为brand分配一块动态内存
+		strcpy(brand, sz); //字符串复制
+		price = p;
+	}
+
+	~computer()
+	{
+//		if(brand != NULL)
+//		{
+			delete[] brand; //对象别撤销时，释放内存，避免泄露
+//			brand = NULL;	//如果注释掉本句，则在显式调用析构
+						//函数后，退出时会因为重复释放而报内存错误
+//		}
+
+		cout << "清理现场" << endl;
+	}
+
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer comp("Dell",7000);
+	comp.print();
+	comp.~computer();//显式调用析构函数，合法，comp被撤销
+	return 0;
+}	//注意这里comp对象释放时析构函数也被隐式调用了一次
+
+---------------------------------------------------------------------------
+
+3. 复制构造函数
+
+	C++中经常使用一个常量或变量初始化另一个变量，例如：
+	double x＝5.0；
+	double y＝x;
+	使用类创建对象时，构造函数被自动调用以完成对象的初
+始化，那么能否象简单变量的初始化一样，直接用一个对
+象来初始化另一个对象呢？答案是肯定的，以point类为例：
+
+	point pt1(2,3);
+	point pt2=pt1;
+	后一个语句也可写成：
+
+	point pt2( pt1);
+	上述语句用pt1初始化pt2，相当于将pt1中每个数据成员的
+值复制到pt2中，这是表面现象。实际上，系统调用了一个
+复制构造函数。如果类定义中没有显式定义该复制构造函
+数时，编译器会隐式定义一个缺省的复制构造函数，它是
+一个inline、public的成员函数，其原型形式为：
+	point:: point (const point &);
+	
+3.1 复制构造函数调用机制
+
+	复制构造函数的调用示例：
+	point pt1(3,4);  //构造函数
+	point pt2(pt1); //复制构造函数
+	point pt3 = pt1; //复制构造函数
+---------------------------------------------------------------------------
+示例：
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int xPos;
+	int yPos;
+public:
+	point(int x = 0, int y = 0): xPos(x), yPos(y)//初始化表达式
+	{
+		cout << "两个参数的构造函数被自动调用" << endl;
+	}
+	point(const point & pa)
+	{
+		cout<<"默认的复制构造函数被调用\n";
+		xPos = pa.xPos;
+		yPos = pa.yPos;
+	}
+	void print()//输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+	~point()
+	{
+		cout<<"析构函数被调用\n";
+	}
+};
+
+int main()
+{
+	point p1(1, 2);
+	p1.print();
+	point p2 = p1;//或point p2(p1) 当用一个对象去初始化另一个对象的时候，会调用复制构造函数
+
+	p2.print();
+	return 0;
+}
+
+---------------------------------------------------------------------------
+
+3.2 缺省复制构造函数带来的问题
+
+	缺省的复制构造函数并非万金油，在一些情况下，
+必须由程序员显式定义缺省复制构造函数，先来
+看一段错误代码示例:
+#include <iostream>
+using namespace std;
+
+class computer
+{
+private:
+	char * brand;
+	float price;
+
+public:
+	computer(const char * sz, float p)
+	{
+		brand = new char[strlen(sz) +1]; //构造函数中为brand指针动态分配内存
+		strcpy(brand, sz);
+		price = p;
+	}
+	
+//	computer(const computer &cp)	//默认的复制构造函数的实现如下:
+//	{
+//		brand = cp.brand;	//对指针变量不能这样直接赋值，这是引起错误的根源
+//		price = cp.price;
+//	}
+
+	~computer()
+	{
+		delete[] brand; //析构函数中释放申请到的动态内存
+		cout << "清理现场" << endl;
+	}
+	
+	void print()
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer comp1("Dell", 7000); //声明computer类对象comp，并初始化
+	comp1.print();
+	computer comp2(comp1); //调用缺省的复制构造函数
+	comp2.print();
+	return 0;
+}
+---------------------------------------------------------------------------
+
+	如果类中含有指针型的数据成员、需要使用动态内存，程
+序员最好显式定义自己的复制构造函数，避免各种可能出
+现的内存错误
+
+computer(const computer &cp) //自定义复制构造函数
+{
+	//重新为brand开辟和cp.brand同等大小的动态内存
+	brand = new char[strlen(cp.brand) + 1];
+	strcpy(brand, cp.brand); //字符串复制
+	price = cp.price;
+}
+---------------------------------------------------------------------------
+示例：
+
+#include <iostream>
+#include <cstring>
+using namespace std;
+class computer  /*当类里有指针成员的时候，我们要自己定义构造函数，析构函数，
+复制构造函数，赋值运算符重载函数*/
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(char * sz, float p)
+	{
+	//	brand = sz;
+		cout<<"构造函数被调用\n";
+		brand = new char[strlen(sz)+1];//5个字节
+		strcpy(brand, sz);
+		price = p;
+	}
+	computer(const computer & obj)//拷贝构造函数 
+	{
+		cout<<"默认的复制构造函数被调用\n";
+	//	brand = obj.brand;//浅拷贝：只是复制一个地址过来
+		brand = new char[strlen(obj.brand)+1];// 深拷贝：自己申请堆内存
+		strcpy(brand, obj.brand);
+		price = obj.price;
+	}
+	~computer()
+	{
+		cout<<"析构函数被调用\n";
+		delete []brand;
+		brand = NULL;
+	}
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{	computer comp("Dell", 7000); //调用构造函数声明computer变量comp
+	comp.print(); //信息输出
+	computer comp1 = comp;
+	comp1.print();
+	return 0;
+}
+---------------------------------------------------------------------------
+
+3.3 关于构造函数和复制构造函数
+
+	复制构造函数可以看成是一种特殊的构造函数，这里姑且
+区分为“复制构造函数”和“普通构造函数”，因此，它也支持
+初始化表达式。
+
+	创建对象时，只有一个构造函数会被系统自动调用，具体
+调用哪个取决于创建对象时的参数和调用方式。C++对编译
+器何时提供缺省构造函数和缺省复制构造函数有着独特的
+规定。
+
+---------------------------------------------------------------------------
+
+4. 构造函数调用示例
+
+//为了防止CPoint pt = 2;和CPoint pt2 = pt1;这种隐性转换，可以在相应的构造函数前增加explicit标识符
+#include <iostream>
+using namespace std;
+
+class CPoint
+{
+protected:
+	int x;
+	int y;
+
+public:
+	//缺省构造函数,如果定义类时未指定任何构造函数，
+	//系统将自动生成不带参数的缺省构造函数
+	CPoint()
+	{
+		cout << "默认构造函数 " << this << " ";
+		x = 0;
+		y = 0;
+	}
+
+	//带一个参数的可用于类型转换的构造函数
+//	explicit	//加上 explicit 可防止 CPoint pt1 = 1; 这种隐性转换
+	CPoint(int ix)
+	{
+		cout << "1参数构造函数 " << this << " ";
+		x = ix;
+		y = 0;
+	}
+
+	//带参数的构造函数
+	CPoint(int ix, int iy)
+	{
+		cout << "2参数构造函数 " << this << " ";
+		x = ix;
+		y = iy;
+	}
+
+	//拷贝构造函数,如果此函数不定义，系统将生成缺省拷贝构造函数功能,
+	//缺省拷贝构造函数的行为是：用传入的对象参数的成员初始化正要建立的对象的相应成员
+//	explicit	//加上 explicit 可防止 CPoint pt2 = pt1; 这种隐性转换
+	CPoint(const CPoint &cp)
+	{
+		cout << "拷贝构造函数 " << this << " ";
+		x = cp.x;
+		y = cp.y;
+	}
+
+	CPoint &operator=(const CPoint &cp)
+	{
+		cout << "赋值重载函数 " << this << " ";
+		if (this != &cp)
+		{
+			x = cp.x;
+			y = cp.y;
+		}
+		return (*this);
+	}
+
+	//析构函数，一个类中只能有一个析构函数,如果用户没有定义析构函数，
+	//系统会自动未类生成一个缺省的析构函数
+	~CPoint()
+	{
+		cout << "析构函数 " << this << " ";
+	}
+};
+
+int main(int argc, char* argv[])
+{
+	CPoint p0();		//这是函数的声明，不是实例化类
+
+	cout << endl << "CPoint pt1;\t\t";
+	CPoint pt1;			//缺省构造函数
+	
+	cout << endl << "CPoint pt2(1);\t\t";
+	CPoint pt2(1);		//一个参数的构造函数
+
+	cout << endl << "CPoint pt3(1, 2);\t";
+	CPoint pt3(1, 2);	//两个参数的构造函数
+
+	cout << endl << "CPoint pt4 = 1;\t\t";
+	CPoint pt4 = 1;		//等价于CPoint t4(1);	//explicit
+
+	cout << endl << "CPoint pt5 = t1;\t";
+	CPoint pt5 = pt1;	//CPoint(t1);
+
+	cout << endl << "CPoint pt6 = CPoint();\t";
+	CPoint pt6 = CPoint();	//CPoint(1); CPoint(1,2);
+
+	cout << endl << "pt6 = CPoint(1);\t";
+	pt6 = CPoint(1);
+
+	cout << endl << "pt6 = 1;\t\t";
+	pt6 = 1;			//首先调用单个参数的构造函数，生成临时对象CPoint(1), 然后调用赋值运算符函数
+	
+	cout << endl << "pt6 = t1;\t\t";
+	pt6 = pt1;			//调用赋值运算符函数
+
+	cout << endl << endl;
+	return 0;
+}
+
+---------------------------------------------------------------------------	
+
+5. 特殊数据成员的初始化
+
+	有4类特殊的数据成员（常量成员、引用成员、类
+对象成员、静态成员），其初始化及使用方式与
+前面介绍的普通数据数据成员有所不同，下面展
+开具体讨论。
+
+5.1 const数据成员的初始化
+	数据成员可以由const修饰，这样，一经初始化，
+该数据成员便具有“只读属性”，在程序中无法对
+其值修改。
+
+	事实上，在构造函数体内或复制构造函数体内初
+始化const数据成员是非法的。
+
+// const成员变量的初始化不能在构造函数体内进行
+#include <iostream>
+using namespace std;
+
+class point
+{
+private:
+	const int xPos; //符号常量成员xPos和yPos
+	const int yPos;
+
+public:
+	point(int x, int y)
+	{
+		xPos = x; //错误，无法直接赋值
+		yPos = y;
+	}
+
+	point(const point & pt)
+	{
+		xPos = pt.xPos;
+		yPos = pt.yPos;
+	}
+
+	void print()
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+int main()
+{
+	point pt1(3, 4);//调用有参构造函数
+	pt1.print();
+
+	point pt2(pt1);//调用复制构造函数
+	pt2.print();
+
+	return 0;
+}
+---------------------------------------------------------------------------	
+	const数据成员只能通过成员初始化表达式进行初
+始化。
+
+// const数据成员只能在初始化表中进行初始化
+#include <iostream>
+using namespace std;
+
+class point
+{
+private:
+	const int xPos;
+	const int yPos;
+
+public:
+	point(int x, int y):xPos(x), yPos(y) //const数据成员只能在初始化表中进行初始化
+	{
+	}
+
+	point(const point & pt):xPos(pt.xPos), yPos(pt.yPos) //const数据成员只能在初始化表中进行初始化
+	{
+	}
+
+	void print()
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+int main()
+{
+	point pt1(3, 4);
+	pt1.print();
+
+	point pt2(pt1);
+	pt2.print();
+
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+5.2 引用成员的初始化
+
+	对于引用类型的数据成员，同样只能通过成员初
+始化表达式进行初始化，示例：
+
+#include <iostream>
+using namespace std;
+class point
+{
+private:
+	int xPos;
+	int yPos;
+	int &ref1;
+	double &ref2;
+public:
+	point(int x, int y, double &z):ref1(xPos), ref2(z) //引用成员的初始化同样要放在初始化表中
+	{
+		xPos = x;
+		yPos = y;
+	}
+	//复制构造函数与此一致：引用成员的初始化同样要放在初始化表中
+	point(const point &pt):ref1(pt.ref1), ref2(pt.ref2)
+	{
+		xPos = pt.xPos;
+		yPos = pt.yPos;
+	}
+	void print()
+	{
+		cout << "xPos: " << xPos << ", yPos: " << yPos;
+		cout << ", ref1:  " << ref1 << ", ref2:  " << ref2 << endl;
+	}
+	void SetX(int x)
+	{
+		xPos = x;
+	}
+};
+
+int main()
+{
+	double outInt = 5.0;
+	point pt1(3, 4, outInt);
+	pt1.print();
+
+	point pt2(pt1);
+	pt2.print();
+
+	cout << "改变pt1中的x后" << endl;
+	pt1.SetX(7);
+	pt1.print();
+	pt2.print();
+
+	outInt = 6;
+	cout << "outInt变化后：" << endl;
+	pt1.print();
+	pt2.print();
+
+	return 0;
+}
+
+---------------------------------------------------------------------------	
+
+5.3 类对象成员的初始化
+
+	类数据成员也可以是另一个类的对象，比如，一个直线类
+对象中包含两个point类对象，在直线类对象创建时可以在
+初始化列表中初始化两个point对象，当然也可以在构造函
+数里初始化它们。
+
+line(int x1, int y1, int x2, int y2):pt1(x1, y1), 
+pt2(x2, y2) //line对象的有参构造函数
+{
+// pt1 = point(x1, y1);//如果不在初始化表达式里初始化，也可以这样初始化
+// pt2 = point(x2, y2);
+cout << "线的构造函数被执行" << endl;
+}
+---------------------------------------------------------------------------	
+//示例1
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+	int n;
+public:
+	A(int nn)
+	{
+		cout<<"构造A\n";
+		n = nn;
+	}
+	~A()
+	{
+		cout<<"析构A\n";
+	}
+};
+
+
+class B
+{
+	A a;
+	int b;
+public:
+	B(int nn, int bb):a(nn)
+	{
+		cout<<"构造B\n";
+		b = bb;
+	}
+	void print()
+	{
+		cout<<"a.n = "<<a.n<<", b = "<<b<<endl;
+	}
+	~B()
+	{
+		cout<<"析构B\n";
+	}
+};
+
+int main()
+{
+
+	B b(11, 22);
+	b.print();
+	return 0;
+}
+---------------------------------------------------------------------------	
+//示例2
+#include <iostream>
+using namespace std;
+class point //点类的定义
+{
+private:
+	int xPos;
+	int yPos;
+public:
+	point(int x = 0, int y = 0) //带缺省调用的构造函数
+	{
+		cout << "点的构造函数被执行" << endl;
+		xPos = x;
+		yPos = y;
+	}
+	point(const point & pt) //复制构造函数
+	{
+		cout << "点的复制构造函数被执行" << endl;
+		xPos = pt.xPos;
+		yPos = pt.yPos;
+	}
+	void print()
+	{
+		cout << "( " << xPos << ", " << yPos << ")";
+	}
+};
+
+class line //line类的定义
+{
+private:
+	point pt1; //point类对象作为line类成员，此处若写成point pt1(3,4)，错
+	point pt2;
+public:
+	line(int x1, int y1, int x2, int y2):pt1(x1, y1), pt2(x2, y2) //line对象的有参构造函数
+	{
+//		pt1 = point(x1, y1);//如果不在初始化表达式里初始化，也可以这样初始化
+//		pt2 = point(x2, y2);
+		cout << "线的构造函数被执行" << endl;
+	}
+	line(const line &ll):pt1(ll.pt1), pt2(ll.pt2) //line对象的复制构造函数
+	{
+		cout << "线的复制构造函数被执行" << endl;
+	}
+	void draw()
+	{
+		pt1.print();
+		cout << "  to  ";
+		pt2.print();
+		cout << endl;
+	}
+};
+
+int main()
+{
+	line l1(1, 2, 3, 4); //调用有参构造函数
+	l1.draw();
+	line l2(l1); //调用复制构造函数
+	l2.draw();
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+5.4 特别知识
+
+	对复制构造函数来说，一旦给出了自己定义的形
+式，编译器便不会提供缺省的复制构造函数，因
+此，确保自定义的复制构造函数的有效性很重要。
+因此，在一些必须使用自定义复制构造函数的场
+合，掌握特殊成员的用法很必要。所举例子中，
+尽管有些复制构造函数纯属“画蛇添足”，用系统
+提供的缺省复制构造函数足以实现想要的功能，
+但还是给出了完整的书写形式，这就是原因所在。
+
+---------------------------------------------------------------------------	
+
+5.5 static数据成员的初始化
+
+	C++允许使用static（静态存储）修饰数据成员，这样的成
+员在编译时就被创建并初始化的（与之相比，对象是在运
+行时被创建的），且其实例只有一个，被所有该类的对象
+共享，就像住在同一宿舍里的同学共享一个房间号一样。
+静态数据成员和第6章中介绍的静态变量一样，程序执行时，
+该成员已经存在，一直到程序结束，任何对象都可对其进
+行访问。
+
+	静态数据成员的初始化必须在类申明之外进行，且不再包
+含static关键字，格式如下：
+类型 类名::变量名 = 初始化表达式; //普通变量
+类型 类名::对象名(构造参数); //对象变量
+
+	如float computer::total_price = 0;
+---------------------------------------------------------------------------	
+示例：
+//示例1
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+	int n;
+	static int m;
+public:
+	A(int nn)
+	{
+		cout<<"构造A\n";
+		n = nn;
+		m++;	//可通过m计算有多少个A类的对象
+	}
+	void print()
+	{
+		cout<<"n = "<<n<<", m = "<<m<<endl;
+	}
+	~A()
+	{
+		cout<<"析构A\n";
+	}
+};
+int A::m = 0;	//静态数据成员的初始化必须是这种格式
+
+
+int main()
+{
+	cout<<"A::m = "<<A::m<<endl;;	/*静态数据成员在没有创建对象时就有了，
+	并且可以通过类名直接访问*/
+	A a(5), b(6), c(7);
+	a.print();
+	b.print();
+	c.print();
+	a.m = 10;
+	a.print();
+	b.print();
+	c.print();
+	return 0;
+}
+---------------------------------------------------------------------------	
+//示例2
+#include <iostream>
+using namespace std;
+class computer
+{
+private:
+	float price; //float型数据成员price，表示价格
+	static float total_price; //statci成员，总价，不依附于某个对象
+public:
+	computer(const float p) //构造函数，模拟买电脑的操作，对total_price进行累加	
+	{
+		price = p;
+		total_price += p;
+	}
+	~computer() //析构函数，模拟退还电脑的操作，从total_price中减去所退电脑的price
+	{
+		total_price -= price;
+	}
+	void print() //输出函数
+	{
+		cout << "总价：" << total_price << endl;
+	}
+};
+float computer::total_price = 0;//初始化
+
+int main()
+{
+	computer comp1(7000); //买入电脑1
+	cout << "购买电脑1后" << endl;
+	comp1.print();
+	computer comp2(4999); //买入电脑2
+	cout << "购买电脑2后" << endl;
+	comp2.print();
+	computer comp3(2500); //买入电脑3
+	cout << "购买电脑3后" << endl;
+	comp1.print(); //此处调用comp1.print()、comp2.print()和comp3.print()输出结果相同
+	comp2.~computer(); //退掉电脑2
+	cout << "退掉电脑2后" << endl;
+	comp3.print();
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+6. 特殊函数成员
+
+	除了构造函数、复制构造函数和析构函数外，其
+他成员函数被用来提供特定的功能，一般来说，
+提供给外部访问的函数称为接口，访问权限为
+public，而一些不供外部访问，仅仅作为内部功
+能实现的函数，访问权限设为private。本节主要
+讨论函数成员的一些特殊用法。
+
+6.1 静态成员函数
+
+	成员函数也可以定义成静态的，与静态成员变量
+一样，系统对每个类只建立一个函数实体，该实
+体为该类的所有对象共享。
+
+	静态成员函数体内不能使用非静态的成员变量和
+非静态的成员函数。
+---------------------------------------------------------------------------	
+//示例1
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+	int n;
+	static int m;
+public:
+	A(int nn)
+	{
+		cout<<"A\n";
+		n = nn;
+	}
+	static void fun()
+	{
+		cout<<"fun\n";
+	}
+	static void print()
+	{
+		m++;
+		//cout<<"n = "<<n;	//错误，静态的成员函数print中不能访问非静态的n
+		cout<<", m = "<<m<<endl;	//m是静态成员，可以访问
+		fun();	//fun也是静态成员，也可以访问
+	}
+	~A()
+	{
+		cout<<"析构A\n";
+	}
+};
+int A::m=1;
+
+int main()
+{
+	A a(2);
+	a.print();
+	return 0;
+}
+---------------------------------------------------------------------------	
+//示例2
+#include <iostream>
+using namespace std;
+class computer
+{
+private:
+	char *name;
+	float price;
+	static float total_price; //静态数据成员
+public:
+	computer(const char *chr, const float p) //构造函数，模拟买电脑操作
+	{
+		name = new char[strlen(chr) + 1];
+		strcpy(name, chr);
+		price = p;
+		total_price += p;
+	}
+	~computer() //析构函数，模拟退掉电脑的操作
+	{
+		if (name)
+		{
+			delete[] name;
+			name = NULL;
+		}
+		total_price -= price;
+	}
+	static void print_total() //静态成员函数，原则上只能访问静态数据成员
+	{
+		cout << "总价：" << total_price << endl;
+	}
+	static void print(computer &com); //静态成员函数print()原型，如果要访问某具体对象，必须传递参数
+};
+void computer::print(computer &com) //静态成员函数print()实现
+{
+	cout << "名称" << com.name << endl;
+	cout << "价格" << com.price << endl;
+}
+
+#include "computer.h"
+float computer::total_price = 0; //初始化
+int main()
+{
+	computer comp1("IBM", 7000); //声明类对象comp1，初始化，买入
+	computer::print(comp1); //类名加作用域限定符访问statci成员函数，传递参数comp1
+	computer::print_total(); //类名加作用域限定符访问statci成员函数
+
+	computer comp2("ASUS", 4999); //声明类对象comp2，初始化，买入
+	computer::print(comp2); //类名加作用域限定符访问statci成员函数，传递参数comp2
+	computer::print_total();
+
+	comp2.~computer(); //析构函数调用，退还电脑
+	computer::print_total();
+
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+6.2 const与成员函数
+
+1. 只能读取类数据成员，而不能修改之
+2. 只能调用const成员函数，不能调用非const成员函数
+
+其基本定义格式为：
+（1）类内定义时：
+类型 函数名(参数列表) const
+{
+	函数体
+}
+
+（2）类外定义时，共分两步：
+类内声明：
+类型 函数名(参数列表) const；
+
+类外定义
+类型 类名::函数名(参数列表) const
+{
+	函数体
+}
+---------------------------------------------------------------------------	
+//示例1
+#include <iostream>
+using namespace std;
+
+class A
+{
+private:
+	int n;
+	int m;
+public:
+	A(int nn)
+	{
+		cout<<"A\n";
+		n = nn;
+		m++;
+	}
+	void fun()
+	{
+		m++;	
+		cout<<"fun\n";
+	}
+	void print() const 
+	{
+//		m++;	//错误，不能在const成员函数print中修改数据成员
+		cout<<"n = "<<n;
+		cout<<", m = "<<m<<endl;
+		fun();	//错误，const成员函数中不能访问非const的函数成员fun
+	}
+	~A()
+	{
+		cout<<"析构A\n";
+	}
+};
+
+int main()
+{
+	A a(2);
+	a.print();
+	return 0;
+}
+
+---------------------------------------------------------------------------	
+//示例2
+#include <iostream>
+using namespace std;
+
+class point
+{
+	int x; //默认为private的数据成员x和y
+	int y;
+
+public:
+	point(int xp = 0, int yp = 0) //构造函数
+	{
+		x = xp;
+		y = yp;
+	}
+
+	void print() const //const成员函数内无法修改数据成员，否则编译器报错
+	{
+		x = 5; //1. 试图修改x将引发编译器报错
+		set(); //2. 试图调用非const函数将引发编译器报错
+		cout << "x: " << x << " ,y: " << y << endl;
+	}
+
+	void set() //将set()定义成const函数就能解决问题
+	{
+	}
+};
+
+int main()
+{
+	point pt;		//声明类对象，以缺省参数形式调用构造函数
+	pt.print();		//调用const成员函数
+
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+7. 对象的组织
+
+	有了自己定义的类，或者使用别人定义好的类创
+建对象，其机制与使用int等创建普通变量几乎完
+全一致，同样可以const对象、创建指向对象的指
+针，创建对象数组，还可使用new和delete等创建
+动态对象。
+---------------------------------------------------------------------------	
+
+7.1 const对象和const对象引用
+
+	类对象也可以声明为const对象，一般来说，能作
+用于const对象和const对象引用的成员函数除了
+构造函数和析构函数，便只有const成员函数了，
+因为const对象只能被创建、撤销以及只读访问，
+改写是不允许的。
+
+	同样的，const对象的引用也只能调用const成员
+函数，以及构造函数和析构函数。
+
+示例：
+#include <iostream>
+using namespace std;
+
+class point //类定义
+{
+	int x; //默认private型成员变量x和y
+	int y;
+
+public:
+	point(int xp = 0, int yp = 0)//构造函数
+	{
+		x = xp;
+		y = yp;
+	}
+	
+	~point()					//析构函数
+	{
+		x = -1;
+	}
+
+	void SetX(int xp) //非const成员函数SetX，设置x
+	{
+		x = xp;
+	}
+
+	void SetY(int yp) //非const成员函数SetY，设置y
+	{
+		y = yp;
+	}
+
+	void print() const //const成员函数print，不能修改x和y
+	{
+		cout << "x: " << x << " ,y: " << y << endl;
+	}
+};
+
+//#include "point.h"
+using namespace std;
+
+int main()
+{
+	point pt(3, 4);			//声明一个普通类变量pt
+	pt.SetX(5);				//使用pt可调用非const成员函数
+	pt.SetY(6);
+	pt.print();				//pt也可调用const成员函数
+
+	const point ptC(1, 2);	//声明一个const对象（类变量）
+	//ptC.SetX(8);			//错误，ptC是const对象，只能调用const成员函数
+	//ptC.SetY(9);			//错误，ptC是const对象，只能调用const成员函数
+	ptC.~point();			//正确，const对象也能调用非const类型的析构函数
+	ptC.print();			//正确，const对象只能调用const成员函数
+
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+7.2 指向对象的指针
+
+	对象占据一定的内存空间，和普通变量一致，C++程序中采用如下
+形式声明指向对象的指针：
+	类名*  指针名 [=初始化表达式];
+	初始化表达式是可选的，既可以通过取地址（&对象名）给指针初
+始化，也可以通过申请动态内存给指针初始化，或者干脆不初始
+化（比如置为NULL），在程序中再对该指针赋值。
+
+	指针中存储的是对象所占内存空间的首地址。
+	
+	定义point类如备注中的代码
+	针对上述定义，则下列形式都是合法的：
+– point pt; //默认构造函数
+– point *ptr = NULL; //空指针
+– point *ptr = &pt; //取某个对象的地址
+– point *ptr = new point(1, 2.2);//动态分配内存并初始化
+– point *ptr = new point[5]; //动态分配5个对象的数组空间
+
+	使用指针对象：ptr->print();(*ptr).print();都是合法的。
+---------------------------------------------------------------------------	
+
+7.3 对象的大小(sizeof)
+
+	对象占据一定大小的内存空间。总的来说，对象在内存中
+是以结构形式（只包括非static数据成员）存储在数据段
+或堆中，类对象的大小（sizeof）一般是类中所有非
+static成员的大小之和。在程序编译期间，就已经为
+static变量在静态存储区域分配了内存空间，并且这块内
+存在程序的整个运行期间都存在。而类中的成员函数存在
+于代码段中，不管多少个对象都只有一个副本。
+	对象的大小同样遵循第5章中介绍的3条准则，但有一些特
+殊之处需要强调：
+	–C++将类中的引用成员当成“指针”来维护，占据4个内存
+字节。
+	–如果类中有虚函数(后面课程将会介绍)时，虚析构函数
+除外，还会额外分配一个指针用来指向虚函数表
+（vtable），因此，这个时候对象的大小还要加4。
+	–指针成员和引用成员属于“最宽基本数据类型”的考虑范
+畴。
+
+示例：
+#include <iostream>
+using namespace std;
+
+class cex
+{
+private:
+	int a;			//int型，在一般系统上占据4个内存字节	4
+	char b;			//char型，占1个内存字节					1 + 3 (3浪费)
+	float c;		//单精度浮点型，占4个内存字节			4 + 4 (4浪费)
+	double d;		//double型，占8个内存字节				8
+	short e[5];		//short型数组，每个元素占2个内存字节	8 + 2
+	char & f;		//引用，当成指针维护					2 + 4 (2浪费)
+	double & g;		//引用，当成指针维护					4 + 4 (后4浪费)
+	static int h;	//static成员，公共内存，不影响单个对象的大小 0
+	
+public:
+	cex():f(b), g(d) //和构造函数，引用成员必须在初始化表中初始化
+	{
+	}
+	void print()	//成员函数的定义，普通成员函数不影响对象大小
+	{
+		cout << "Hello" << endl;
+	}
+};
+
+int cex::h = 0;		//static成员的初始化
+
+int main()
+{
+	cex c;
+	cout << "sizeof(cex):  " << sizeof(cex) << endl; //输出类对象的大小sizeof(cex) = 48
+	return 0;
+}
+
+UNIX环境高级编程-----面试的时侯用
+Linux驱动 宋宝华-----学的时侯看
+---------------------------------------------------------------------------	
+
+7.4 this指针
+
+	前面提到，一个类的所有对象共用成员函数代码段，不管有多少个对象，每个成员函
+数在内存中只有一个版本，那编译器是如何知道是哪个对象在执行操作呢，答案就是
+“this指针”。
+
+	this指针是隐含在成员函数内的一种指针，称为指向本对象的指针，可以采用诸如
+“this->数据成员”的方式来存取类数据成员。
+
+举例来说：
+class Ex
+{
+	private:
+	int x;
+	int y;
+	public:
+	void Set()
+	{
+		this->x=1;
+		this->y=2;
+	}
+};
+
+---------------------------------------------------------------------------	
+
+7.5 对象数组
+
+	对象数组和标准类型数组的使用方法并没有什么不同，也有声明、初始化
+和使用3个步骤。
+
+	(1)对象数组的声明：类名 数组名[对象个数];
+这种格式会自动调用无参或所有参数都有缺省值的构造函数，类定义要符
+合该要求，否则编译报错。
+
+	(2)对象数组的初始化：可以在声明时初始化。
+对于point(int ix,int iy){}这种没有缺省参数值的构造函数：
+point pt[2]={point(1,2), point(3,4)}; //#1 正确
+point pt[ ]={point(1,2), point(3,4)}; //#2 正确
+point pt[5]={point(1,2), point(3,4)}; //#3 错误
+语句#1和#2是正确的，但语句#3错误，因为pt的后3个元素会自动调用无
+参的或者所有参数都有缺省值的构造函数，但这样的构造函数不存在。
+---------------------------------------------------------------------------	
+示例：
+//对象数组的声明
+#include <iostream>
+using namespace std;
+
+class point
+{
+private:
+	int x;
+	int y;
+
+public:
+//	point(int ix = 0, int iy = 0)
+	point(int ix, int iy)
+	{
+		static int iCount = 0;
+		iCount++;
+		cout << iCount << " .构造函数被调用" << endl;
+		x = ix;
+		y = iy;
+	}
+};
+
+int main()
+{
+	//错误: 没有合适的构造函数，因为它要调用无参的构造函数
+	point pt1[2];
+
+	//正确
+	point pt2[2] = {point(1,2), point(3,4)};
+
+	//正确, 自动确定数组的元素个数
+	point pt3[] = {point(1,2), point(3,4)};
+
+	//错误: 后3个元素会自动调用无参的构造函数，但这样的构造函数不存在
+	point pt4[5] = {point(1,2), point(3,4)};
+
+	//解决方法: 给上述构造函数的2个参数定义缺省值
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+7.6 对象链表
+
+	对象链表中，节点的初始化需要构造函数来完成，
+除此之外，对象链表和C语言中介绍的链表并无不
+同。
+---------------------------------------------------------------------------	
+
+8. 为对象动态分配内存
+
+	和把一个简单变量创建在动态存储区一样，可以
+用new和delete为对象分配动态存储区，在复制构
+造函数一节中已经介绍了为类内的指针成员分配
+动态内存的相关范例，本节主要讨论如何为对象
+和对象数组动态分配内存。
+---------------------------------------------------------------------------	
+
+8.1  使用new和delete为单个对象分配/释放动态内存
+
+#include <iostream>
+using namespace std;
+
+class point
+{
+private:								//private数据成员列表
+	int x;
+	int y;
+
+public:
+	point(int xp=0,int yp=0)			//构造函数，带缺省参数值
+	{
+		x=xp;
+		y=yp;
+		cout<<"构造函数被调用"<<endl;
+	}
+
+	~point()							//析构函数
+	{
+		cout<<"析构函数被调用"<<endl;
+	}
+
+	void print()						//成员函数，类内部实现
+	{
+		cout<<"x:  "<<x<<", y:  "<<y<<endl;
+	}
+};
+
+int main()
+{
+	point* p = new point(4,5);	//动态申请一块内存，存储point类对象，并将地址赋值给point型指针p
+	p->print();					//使用指针加－>调用成员函数
+	delete p;					//释放动态申请的内存，防止内存泄露
+	p=NULL;						//养成良好习惯，防止野指针
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+8.2  使用new和delete[]为对象数组分配/释放动态空间
+
+	使用new为对象数组分配动态空间时，不能显式指
+定对象调用哪个构造函数，因此，对象要么没有
+定义任何形式的构造函数（由编译器缺省提供），
+要么显式定义了一个（且只能有一个）所有参数
+都有缺省值的构造函数。
+
+//8-23 使用new和delete[]为对象数组分配/释放动态空间
+#include <iostream>
+using namespace std;
+
+class point
+{
+private: //private数据成员列表
+	int x;
+	int y;
+
+public:
+	point(int xp = 0, int yp = 0) //构造函数，带缺省参数值
+	{
+		x = xp;
+		y = yp;
+		cout << "构造函数被调用" << endl;
+	}
+
+	~point() //析构函数
+	{
+		cout << "析构函数被调用" << endl;
+	}
+
+	void print() //成员函数，类内部实现
+	{
+		cout << "x:  " << x << ", y:  " << y << endl;
+	}
+
+	void Set(int xp, int yp) //成员函数，类内部实现，用来修改成员x和y
+	{
+		x = xp;
+		y = yp;
+	}
+};
+
+int main()
+{
+	point * p = new point[2];	//申请一块动态内存，连续存放连个point对象，将首地址赋值给point指针p
+	p[0].print();				//可以将指针当成数组名，使用下标运算符访问对应对象，等价性
+	p[1].Set(4, 5);				//调用数据元素（对象）的成员函数Set
+	p[1].print();
+	delete[] p;					//释放申请的动态内存
+	p = NULL;					//养成良好习惯，防止野指针
+	return 0;
+}
+---------------------------------------------------------------------------	
+
+8.3 malloc和free不能为对象动态申请内存
+
+	malloc/free无法满足动态对象的要求，因为
+malloc和free无法像new/delete及new/delete[]
+那样自动调用对象的构造函数和析构函数。
+
+---------------------------------------------------------------------------	
+
+总结：
+
+1.讲述了C++语言中面向对象编程的基本概念和方法。
+
+2.C++通过class关键字可以定义类，类的成员包括数据成员
+和函数成员两种。关于类的使用，大体分为类的定义、类
+的实现和类对象的创建3个步骤，其中，类的定义指明了类
+的结构，相当于“蓝图”，而类的实现相当于“技术图纸”，根
+据定义和实现便可以声明一个类的对象。
+
+3.类中有几个特殊的成员函数，构造函数、复制构造函数和
+析构函数。构造函数和复制构造函数用于为类对象开辟所
+需内存空间，并初始化各成员变量的值，而析构函数则是
+在撤销对象时，释放其内存空间，但需要注意的是，用户
+通过new申请的动态内存并不会在对象撤销时被自动释放，
+所以，应合理搭配new和delete，及时释放无用的动态内存。
+构造函数不能由用户调用，但析构函数可以显式调用。复
+制构造函数的形参是本类对象的引用，它是用一个对象来
+初始化另一个对象。如果编程者没有显式定义构造函数
+（包括复制构造函数），C++编译器就隐式定义缺省的构造
+函数。
+---------------------------------------------------------------------------	
+课后作业：
+1.定义一个满足如下要求的Date类
+a)用下面的格式输出日期
+年.月.日 (2011.01.31)
+b)可以实现在日期上加一天操作(不要用运算符
+重载)
+c)可以实现设置日期、打印日期操作
+
+d) 年,月,日可以各用一个整数表示
+---------------------------------------------------------------------------	

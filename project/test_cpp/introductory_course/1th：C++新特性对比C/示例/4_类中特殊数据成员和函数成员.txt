@@ -1,0 +1,500 @@
+//8-12 const成员变量的初始化不能在构造函数体内进行
+#include <iostream>
+using namespace std;
+
+class point
+{
+private:
+	const int xPos; //符号常量成员xPos和yPos
+	const int yPos;
+
+public:
+	point(int x, int y)
+	{
+		xPos = x; //错误，无法直接赋值
+		yPos = y;
+	}
+
+	point(const point & pt)
+	{
+		xPos = pt.xPos;
+		yPos = pt.yPos;
+	}
+
+	void print()
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+int main()
+{
+	point pt1(3, 4);//调用有参构造函数
+	pt1.print();
+
+	point pt2(pt1);//调用复制构造函数
+	pt2.print();
+
+	return 0;
+}
+
+//8-13 const数据成员只能在初始化表中进行初始化
+#include <iostream>
+using namespace std;
+
+class point
+{
+private:
+	const int xPos;
+	const int yPos;
+
+public:
+	point(int x, int y):xPos(x), yPos(y) //const数据成员只能在初始化表中进行初始化
+	{
+	}
+
+	point(const point & pt):xPos(pt.xPos), yPos(pt.yPos) //const数据成员只能在初始化表中进行初始化
+	{
+	}
+
+	void print()
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+int main()
+{
+	point pt1(3, 4);
+	pt1.print();
+
+	point pt2(pt1);
+	pt2.print();
+
+	return 0;
+}
+
+
+#include <iostream>
+using namespace std;
+class point
+{
+private:
+	int xPos;
+	int yPos;
+	int &ref1;
+	double &ref2;
+public:
+	point(int x, int y, double &z):ref1(xPos), ref2(z) //引用成员的初始化同样要放在初始化表中
+	{
+		xPos = x;
+		yPos = y;
+	}
+	//复制构造函数与此一致：引用成员的初始化同样要放在初始化表中
+	point(const point &pt):ref1(pt.ref1), ref2(pt.ref2)
+	{
+		xPos = pt.xPos;
+		yPos = pt.yPos;
+	}
+	void print()
+	{
+		cout << "xPos: " << xPos << ", yPos: " << yPos;
+		cout << ", ref1:  " << ref1 << ", ref2:  " << ref2 << endl;
+	}
+	void SetX(int x)
+	{
+		xPos = x;
+	}
+};
+
+int main()
+{
+	double outInt = 5.0;
+	point pt1(3, 4, outInt);
+	pt1.print();
+
+	point pt2(pt1);
+	pt2.print();
+
+	cout << "改变pt1中的x后" << endl;
+	pt1.SetX(7);
+	pt1.print();
+	pt2.print();
+
+	outInt = 6;
+	cout << "outInt变化后：" << endl;
+	pt1.print();
+	pt2.print();
+
+	return 0;
+}
+
+
+//示例1
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+	int n;
+public:
+	A(int nn)
+	{
+		cout<<"构造A\n";
+		n = nn;
+	}
+	~A()
+	{
+		cout<<"析构A\n";
+	}
+};
+
+
+class B
+{
+	A a;
+	int b;
+public:
+	B(int nn, int bb):a(nn)
+	{
+		cout<<"构造B\n";
+		b = bb;
+	}
+	void print()
+	{
+		cout<<"a.n = "<<a.n<<", b = "<<b<<endl;
+	}
+	~B()
+	{
+		cout<<"析构B\n";
+	}
+};
+
+int main()
+{
+
+	B b(11, 22);
+	b.print();
+	return 0;
+}
+
+//示例2
+#include <iostream>
+using namespace std;
+class point //点类的定义
+{
+private:
+	int xPos;
+	int yPos;
+public:
+	point(int x = 0, int y = 0) //带缺省调用的构造函数
+	{
+		cout << "点的构造函数被执行" << endl;
+		xPos = x;
+		yPos = y;
+	}
+	point(const point & pt) //复制构造函数
+	{
+		cout << "点的复制构造函数被执行" << endl;
+		xPos = pt.xPos;
+		yPos = pt.yPos;
+	}
+	void print()
+	{
+		cout << "( " << xPos << ", " << yPos << ")";
+	}
+};
+
+class line //line类的定义
+{
+private:
+	point pt1; //point类对象作为line类成员，此处若写成point pt1(3,4)，错
+	point pt2;
+public:
+	line(int x1, int y1, int x2, int y2):pt1(x1, y1), pt2(x2, y2) //line对象的有参构造函数
+	{
+//		pt1 = point(x1, y1);//如果不在初始化表达式里初始化，也可以这样初始化
+//		pt2 = point(x2, y2);
+		cout << "线的构造函数被执行" << endl;
+	}
+	line(const line &ll):pt1(ll.pt1), pt2(ll.pt2) //line对象的复制构造函数
+	{
+		cout << "线的复制构造函数被执行" << endl;
+	}
+	void draw()
+	{
+		pt1.print();
+		cout << "  to  ";
+		pt2.print();
+		cout << endl;
+	}
+};
+
+int main()
+{
+	line l1(1, 2, 3, 4); //调用有参构造函数
+	l1.draw();
+	line l2(l1); //调用复制构造函数
+	l2.draw();
+	return 0;
+}
+
+
+//示例1
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+	int n;
+	static int m;
+public:
+	A(int nn)
+	{
+		cout<<"构造A\n";
+		n = nn;
+		m++;	//可通过m计算有多少个A类的对象
+	}
+	void print()
+	{
+		cout<<"n = "<<n<<", m = "<<m<<endl;
+	}
+	~A()
+	{
+		cout<<"析构A\n";
+	}
+};
+int A::m = 0;	//静态数据成员的初始化必须是这种格式
+
+
+int main()
+{
+	cout<<"A::m = "<<A::m<<endl;;	/*静态数据成员在没有创建对象时就有了，
+	并且可以通过类名直接访问*/
+	A a(5), b(6), c(7);
+	a.print();
+	b.print();
+	c.print();
+	a.m = 10;
+	a.print();
+	b.print();
+	c.print();
+	return 0;
+}
+
+//示例2
+#include <iostream>
+using namespace std;
+class computer
+{
+private:
+	float price; //float型数据成员price，表示价格
+	static float total_price; //statci成员，总价，不依附于某个对象
+public:
+	computer(const float p) //构造函数，模拟买电脑的操作，对total_price进行累加	
+	{
+		price = p;
+		total_price += p;
+	}
+	~computer() //析构函数，模拟退还电脑的操作，从total_price中减去所退电脑的price
+	{
+		total_price -= price;
+	}
+	void print() //输出函数
+	{
+		cout << "总价：" << total_price << endl;
+	}
+};
+float computer::total_price = 0;//初始化
+
+int main()
+{
+	computer comp1(7000); //买入电脑1
+	cout << "购买电脑1后" << endl;
+	comp1.print();
+	computer comp2(4999); //买入电脑2
+	cout << "购买电脑2后" << endl;
+	comp2.print();
+	computer comp3(2500); //买入电脑3
+	cout << "购买电脑3后" << endl;
+	comp1.print(); //此处调用comp1.print()、comp2.print()和comp3.print()输出结果相同
+	comp2.~computer(); //退掉电脑2
+	cout << "退掉电脑2后" << endl;
+	comp3.print();
+	return 0;
+}
+
+
+//示例1
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+	int n;
+	static int m;
+public:
+	A(int nn)
+	{
+		cout<<"A\n";
+		n = nn;
+	}
+	static void fun()
+	{
+		cout<<"fun\n";
+	}
+	static void print()
+	{
+		m++;
+		//cout<<"n = "<<n;	//错误，静态的成员函数print中不能访问非静态的n
+		cout<<", m = "<<m<<endl;	//m是静态成员，可以访问
+		fun();	//fun也是静态成员，也可以访问
+	}
+	~A()
+	{
+		cout<<"析构A\n";
+	}
+};
+
+int main()
+{
+	A a(2);
+	a.print();
+	return 0;
+}
+
+//示例2
+#include <iostream>
+using namespace std;
+class computer
+{
+private:
+	char *name;
+	float price;
+	static float total_price; //静态数据成员
+public:
+	computer(const char *chr, const float p) //构造函数，模拟买电脑操作
+	{
+		name = new char[strlen(chr) + 1];
+		strcpy(name, chr);
+		price = p;
+		total_price += p;
+	}
+	~computer() //析构函数，模拟退掉电脑的操作
+	{
+		if (name)
+		{
+			delete[] name;
+			name = NULL;
+		}
+		total_price -= price;
+	}
+	static void print_total() //静态成员函数，原则上只能访问静态数据成员
+	{
+		cout << "总价：" << total_price << endl;
+	}
+	static void print(computer &com); //静态成员函数print()原型，如果要访问某具体对象，必须传递参数
+};
+void computer::print(computer &com) //静态成员函数print()实现
+{
+	cout << "名称" << com.name << endl;
+	cout << "价格" << com.price << endl;
+}
+
+#include "computer.h"
+float computer::total_price = 0; //初始化
+int main()
+{
+	computer comp1("IBM", 7000); //声明类对象comp1，初始化，买入
+	computer::print(comp1); //类名加作用域限定符访问statci成员函数，传递参数comp1
+	computer::print_total(); //类名加作用域限定符访问statci成员函数
+
+	computer comp2("ASUS", 4999); //声明类对象comp2，初始化，买入
+	computer::print(comp2); //类名加作用域限定符访问statci成员函数，传递参数comp2
+	computer::print_total();
+
+	comp2.~computer(); //析构函数调用，退还电脑
+	computer::print_total();
+
+	return 0;
+}
+
+
+//示例1
+#include <iostream>
+using namespace std;
+
+class A
+{
+private:
+	int n;
+	int m;
+public:
+	A(int nn)
+	{
+		cout<<"A\n";
+		n = nn;
+		m++;
+	}
+	void fun()
+	{
+		m++;	
+		cout<<"fun\n";
+	}
+	void print() const 
+	{
+//		m++;	//错误，不能在const成员函数print中修改数据成员
+		cout<<"n = "<<n;
+		cout<<", m = "<<m<<endl;
+		fun();	//错误，const成员函数中不能访问非const的函数成员fun
+	}
+	~A()
+	{
+		cout<<"析构A\n";
+	}
+};
+
+int main()
+{
+	A a(2);
+	a.print();
+	return 0;
+}
+
+
+//示例2
+#include <iostream>
+using namespace std;
+
+class point
+{
+	int x; //默认为private的数据成员x和y
+	int y;
+
+public:
+	point(int xp = 0, int yp = 0) //构造函数
+	{
+		x = xp;
+		y = yp;
+	}
+
+	void print() const //const成员函数内无法修改数据成员，否则编译器报错
+	{
+		x = 5; //1. 试图修改x将引发编译器报错
+		set(); //2. 试图调用非const函数将引发编译器报错
+		cout << "x: " << x << " ,y: " << y << endl;
+	}
+
+	void set() //将set()定义成const函数就能解决问题
+	{
+	}
+};
+
+int main()
+{
+	point pt;		//声明类对象，以缺省参数形式调用构造函数
+	pt.print();		//调用const成员函数
+
+	return 0;
+}
+

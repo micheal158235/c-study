@@ -1,0 +1,158 @@
+#include <iostream>
+#include <math.h>
+using namespace std;//私有的成员只能在类内访问。抽象和封装  属性私有，方法公开
+struct point{
+	int xPos;
+	int yPos;//成员变量  数据成员   属性 
+	void print()
+	{
+		cout<<"("<<xPos<<", "<<yPos<<")"<<endl;
+	}
+
+};
+void main()
+{
+	struct point p1 = {1, 2};
+	p1.print();
+	struct point p2 = {3, 4};
+	p2.print();
+	struct point p3 = {5, 6};
+	p3.print();
+}
+
+
+
+//注意：
+//C++规定，类成员的访问权限默认是private，不加申明的成员默认是private，因此上述代码中的第一个private可以省略。
+//数据成员的类型前面不可使用auto、extern和register等，也不能在定义时对变量进行初始化，如果将float price写成float price = 0，编译器会报错。
+//类定义中提供的成员函数是函数的原型申明。
+//关键字private和public出现的顺序和次数可以是任意的，如上述代码也可以写成如下形式：
+class computer
+{
+	char brand[20];	//默认为private类型
+public:
+	void print();
+private:			//这里的private不能省略，因为不是在类定义的开始位置
+	float price;
+public:
+	void SetBrand(char* sz);
+	void SetPrice(float pr);
+};
+
+//private数据成员只能由本类的函数访问，protected数据成员只能在派生类中访问，而public数据成员在派生类和类外均可访问。
+
+
+
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+struct computer //类定义，起到接口作用
+{
+	char brand[20];
+	float price;
+	//3个public成员函数的原型声明
+	void print()
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+	void fun(int n)
+	{
+		cout<<"hello n = "<<n<<endl;
+	}
+};
+int main()
+{
+	struct computer com1 = {"abc", 3000}; //声明创建一个类对象
+	com1.print(); //调用print()函数输出信息
+	com1.fun(5);
+	return 0;
+}
+
+
+
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+class computer //类定义，起到接口作用
+{
+private://私有的成员只能在类的内部访问
+	char brand[20];
+	float price;
+	
+public://公有的成员可以在任何地方访问
+	void setBrand(char * p)
+	{
+		strcpy(brand, p);
+	}
+	void setPrice(float f)
+	{
+		price = f;
+	}
+	void setAll(char * p, float f)
+	{
+	
+		strcpy(brand, p);price = f;
+	}
+	void print()
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+int main()
+{
+	computer com1, com2; //声明创建一个类对象
+	com1.setBrand("abcd");
+	com1.setPrice(3000);
+	com2.setAll("xyd", 4000);
+	com1.print(); //调用print()函数输出信息
+	com2.print(); //调用print()函数输出信息
+	return 0;
+}
+
+
+
+class computer //类定义，起到接口作用
+{
+private:
+	char brand[20];
+	float price;
+public:
+	//3个public成员函数的原型声明
+	void print();
+	void SetBrand(char * sz);
+	void SetPrice(float pr);
+};
+
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+void computer::print() //成员函数的实现，注意作用域限定符的使用
+{
+	cout << "品牌：" << brand << endl;
+	cout << "价格：" << price << endl;
+}
+
+void computer::SetBrand(char * sz)
+{
+	strcpy(brand, sz); //字符串复制
+}
+
+void computer::SetPrice(float pr)
+{
+	price = pr;
+}
+
+int main()
+{
+	computer com1; //声明创建一个类对象
+	com1.SetPrice(5000); //调用public成员函数SetPrice设置price
+	com1.SetBrand("Lenovo"); //调用public成员函数SetBrand设置Brand
+	com1.print(); //调用print()函数输出信息
+	return 0;
+}
+
