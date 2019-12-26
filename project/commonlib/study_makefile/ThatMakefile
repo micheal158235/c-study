@@ -1,0 +1,196 @@
+#####################################################################################################################################
+#知识点1:":=" "?=" "=" "+="的使用                                     \
+VIR_A = A                                                             \
+VIR_B = $(VIR_A) B                                                    \
+VIR_A = AA                                                            \
+结果 VIR_B=AA B                                                       \
+                                                                      \
+VIR_A := A                                                            \
+VIR_B := $(VIR_A) B                                                   \
+VIR_A := AA                                                           \
+结果 VIR_B=A B                                                        \
+                                                                      \
+？=”表示如果该变量没有被赋值，则赋予等号后的值。举例：                \
+VIR ?= new_value                                                      \
+如果VIR在之前没有被赋值，那么VIR的值就为new_value.                    \
+VIR := old_value                                                      \
+VIR ?= new_value                                                      \
+这种情况下，VIR的值就是old_value                                      \
+                                                                      \
+“+=”和平时写代码的理解是一样的，表示将等号后面的值添加到前面的变量上  \
+
+#知识点2:PHONY                                                                   \
+作用见：https://www.cnblogs.com/amanlikethis/archive/2013/11/17/3427622.html     \
+
+#all:$(subst .c,.o,$(wildcard *.c))
+#%.o:%.c
+#    gcc -o $@ $<
+#知识点3:$(subst 要被替换的字符串,用来替换的字符串,被处理的字符串)：             \
+所以：$(subst .c,.o,test1.c test2.c)的意思就是：用.o替换test1.c test2.c中的.c,   \
+最终得到test1.o test2.o。                                                        \
+
+#知识点4:wildcard                                                  \
+$(wildcard 寻找的文件)--在系统中寻找文件                           \
+例如：$(wildcard *.c)                                              \
+就等于找到系统中所有后缀为.c的文件，返回成以空格隔开的一整行字符   \
+例如：test1.c test2.c test3.c 这样                                 \
+
+#知识点5:$(basename 文件名)：                                      \
+取得文件的名字（去掉后缀的意思）                                   \
+例如：$(basename test1.c)就会取得test1                             \
+
+#知识点6:$(CPPSRCS:%.cpp=%.o)                                      \
+从CPPSRCS中取出所有.cpp后缀的文件，将他们的后缀替换成.o            \
+例如CPPSRCS = test.cpp main.cpp                                    \
+则$(CPPSRCS:%.cpp=%.o)得到的就是test.o main.o                      \
+
+#知识点7:(findstring $(DOTSO), $(TARGET))                          \
+在目标TARGET中找出包含$(DOTSO)字符串的项                           \
+例如DOTSO = .so                                                    \
+TARGET = test.so main.cpp main                                     \
+则$(findstring $(DOTSO), $(TARGET))得到的就是test.so               \
+
+#知识点8:Makefile中的自动化变量的使用                                                                                              \
+$@--目标文件。在模式规则中，如果有多个目标，那么， $@ 就是匹配于目标中模式定义的集合。                                             \
+$^--所有的依赖文件。以空格分隔。如果在依赖目标中有多个重复的，那个这个变量会去除重复的依赖目标，只保留一份。                       \
+$+--这个变量很像 $^ ，也是所有依赖目标的集合。只是它不去除重复的依赖目标。                                                         \
+$<--第一个依赖文件。如果依赖目标是以模式（即"%"）定义的，那么"$<"将是符合模式的一系列的文件集。注意，其是一个一个取出来的。        \
+$?--所有依赖文件中更新过的文件，以空格分隔。                                                                                       \
+$%--当规则的目标文件是一个静态库文件时，代表静态库的一个成员名。例如，规则                                                         \
+    的目标是“foo.a(bar.o)”，那么，“ $%”的值就为“bar.o”，“ $@ ”的值为“foo.a”。                                                      \
+    如果目标不是静态库文件，其值为空。                                                                                             \
+$*--这个变量表示目标模式中"%"及其之前的部分。如果目标是"dir/a.foo.b"，并且目标的模式是"a.%.b"，那么，"$*"的值就是"dir/a.foo"。     \
+    这个变量对于构造有关联的文件名是比较有较。如果目标中没有模式的定义，那么"$*"也就不能被推导出，                                 \
+	但是，如果目标文件的后缀是make所识别的，那么"$*"就是除了后缀的那一部分。                                                       \
+	例如：如果目标是"foo.c"，因为".c"是make所能识别的后缀名，所以，"$*"的值就是"foo"。                                             \
+	这个特性是GNU make的，很有可能不兼容于其它版本的make，所以，你应该尽量避免使用"$*"，                                           \
+	除非是在隐含规则或是静态模式中。如果目标中的后缀是make所不能识别的，那么"$*"就是空值。                                         \
+    自动化变量“$*”需要两点说明：                                                                                                   \
+    (1)对于一个明确指定的规则来说不存在“茎”，这种情况下“$*”的含义发生改变。                                                        \
+	此时，如果目标文件名带有一个可识别的后缀（参考10.7后缀规则一节），                                                             \
+	那么“$*”表示文件中除后缀以外的部分。                                                                                           \
+	例如：“foo.c”则“$*”的值为：“foo”，因为.c是一个可识别的文件后缀名。                                                             \
+	GUNmake对明确规则的这种奇怪的处理行为是为了和其它版本的make兼容。                                                              \
+	通常，在除静态规则和模式规则以外，明确指定目标文件的规则中应该避免使用这个变量。                                               \
+    (2)当明确指定文件名的规则中目标文件名包含不可识别的后缀时，此变量为空。                                                        \
+$(@D)--等同于$(dir $@)                                                                                                             \
+    表示目标文件的目录部分（不包括斜杠）。如果“$@”是“dir/foo.o”，那么“$(@D)”的值为“dir”。                                          \
+	如果“$@”不存在斜杠，其值就是“.”（当前目录）。注意它和函数“dir”的区别！                                                         \
+$(@F)--等同于$(notdir $@)                                                                                                          \
+    目标文件的完整文件名中除目录以外的部分（实际文件名）。                                                                         \
+	如果“$@”为“dir/foo.o”，那么“$(@F)”只就是“foo.o”。“$(@F)”等价于函数“$(notdir$@)”。                                              \
+$(*D)--等同于$(dir $*)                                                                                                             \
+$(*F)--等同于$(notdir $*)                                                                                                          \
+    分别代表目标“茎”中的目录部分和文件名部分。                                                                                     \
+$(%D)--等同于$(dir $%)                                                                                                             \
+$(%F)--等同于$(notdir $%)                                                                                                          \
+    当以如“archive(member)”形式静态库为目标时，分别表示库文件成员“member”名中的目录部分和文件名部分。它仅对这种形式的规则目标有效。\
+$(<D)--等同于$(dir $<)                                                                                                             \
+$(<F)--等同于$(notdir $<)                                                                                                          \
+    分别表示规则中第一个依赖文件的目录部分和文件名部分。                                                                           \
+$(^D)--等同于$(dir $^)                                                                                                             \
+$(^F)--等同于$(notdir $^)                                                                                                          \
+    分别表示所有依赖文件的目录部分和文件部分（不存在同一文件）。                                                                   \
+$(+D)--等同于$(dir $+)                                                                                                             \
+$(+F)--等同于$(notdir $+)                                                                                                          \
+    分别表示所有依赖文件的目录部分和文件部分（可存在重复文件）。                                                                   \
+$(?D)--等同于$(dir $?)                                                                                                             \
+$(?F)--等同于$(notdir $?)                                                                                                          \
+    分别表示被更新的依赖文件的目录部分和文件名部分。                                                                               \
+	
+#知识点9:$(notdir $(var)) 获取变量var中的文件名                                                                                    \
+    例如：var = ./study_makefile/libstudy_makefile.so 则$(notdir $(var))获取到的值就是libstudy_makefile.so                         \
+																										                           
+#知识点10:$(dir $(var))获取变量var中的路径                                                                                         \
+    例如：var = ./study_makefile/libstudy_makefile.so 则$(notdir $(var))获取到的值就是./study_makefile                             \
+	
+#知识点11:'@'符号的使用                                                                                                            \
+在Makefile中想使用shell脚本，需要添加"@"符号，例如：                                                                               \
+      @if [ -d xxx ]; then rm -rf xxx; fi; //-d 判断是否存在，在shell中，用[]号代替括号                                            \
+      @cp -fv  xxx  xxxx     //-f 删除已经存在的目标文件而不提示  -v  cp命令将告诉用户正在做什么                                   \
+      例：  cp -fv temp temp2                                                                                                      \
+            显示： 'temp'  ->  'temp2'                                                                                             \
+通常makefile会将其执行的命令行在执行前输出到屏幕上。如果将‘@’添加到命令行前，这个命令将不被make回显出来。                          \
+例如：@echo --compiling module----;  // 屏幕输出 --compiling module----                                                            \
+echo --compiling module----;  // 没有@ 屏幕输出echo --compiling module----                                                         \
+
+#知识点12:'-'符号的使用                                                                                                            \
+通常删除，创建文件如果碰到文件不存在或者已经创建，那么希望忽略掉这个错误，继续执行，就可以在命令前面添加 -，                       \
+-rm dir；                                                                                                                          \
+-mkdir aaadir；                                                                                                                    \
+
+#对如下命令的解释
+#$(CPPDEPS):%d:%.cpp
+#	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDEFLAGS) > $@.$$$$
+#	sed 's,\($*\).o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
+#第一个命令@set -e。@关键字告诉make不输出该行命令；set -e的作用是，当后面的命令的返回值非0时，立即退出。                            \
+第二个命令gcc -MM $< > $@.$$$$, 作用是根据源文件生成依赖关系，并保存到临时文件中。(“>”是shell的重定向符号)                          \
+$$$$为字符串"$$"，由于makefile中所有的$字符都是特殊字符（即使在单引号之中！），要得到普通字符$，需要用$$来转义;                     \
+而$$是shell的特殊变量，它的值为当前进程号；使用进程号为后缀的名称创建临时文件，是shell编程常用做法，这样可保证文件唯一性。          \
+例如 cc -MM main.cc 这句产生的就是 main.o : main.d    临时文件$@.$$$$就是main.d.1234(如果进程号是1234)                              \
+第三个命令sed(替换功能)                                                                                                             \
+test = abcdefghisdabcjsdlfkj                                                                                                        \
+test2 = $(test) | sed -e 's/abc/123/g'(此处的"/"可以用","替代)                                                                      \
+test2就变成了123defghisd123jsdlfkj                                                                                                  \
+sed替换命令的格式是‘s/match/replace/g’如果没有g，则sed的替换操作只对文本中的第一次出现的匹配模式进行替换。                          \
+关于‘s///’命令的另一个注意点是‘/’分隔符有许多替换选项。如果正在执行字符串替换，并且规则表达式或替换字符串中有许多斜杠，             \
+则可以通过在’s’之后指定一个不同的字符来更改分隔符。例如，下列将把所有出现的/usr/local替换成/usr:                                    \
+         sed –e ‘s:/usr/local:/usr:g’ mylist.txt                                                                                    \
+在该例中，使用冒号作为分隔符。如果需要在规则表达式中使用分隔符，可以在它前面加入反斜杠。关于\(\)是保留的模式空间。                  \
+如果%d = main.d                                                                                                                     \
+第1段是main，在sed命令里把main用括号括起来，使接下来的replace中可以用\1引用main。                                                   \
+第2段是\.o，表示匹配main.o，(这里\不知何意，去掉也是可以的)。                                                                       \
+第3段是正则式[ :]*，表示若干个空格或冒号，(其实一个.d里只会有一个冒号，如果这里写成[ ]*:，即匹配若干个空格后跟一个冒号，也是可以的)。\
+最终，这几行实现了把临时文件main.d.1234的内容main.o : main.c command.h改为main.o main.d : main.c command.h，并存入main.d文件的功能。\
+[参考网址1]https://blog.csdn.net/huyansoft/article/details/8924624?locationNum=3&fps=1                                              \
+[参考网址2]https://blog.csdn.net/chezhai/article/details/80047990                                                                   \
+[参考网址3]https://www.cnblogs.com/openix/archive/2012/04/17/2453833.html                                                           \
+#####################################################################################################################################
+
+.PHONY:iner_all all clean
+DOTSO := .so
+DOTA := .a
+
+CPPSRCS    := $(wildcard $(SOURCE_DIR)/*.cpp)
+CSRCS      := $(wildcard $(SOURCE_DIR)/*.c)
+CPPOBJS    := $(CPPSRCS:%.cpp=%.o)
+COBJS      := $(CSRCS:%.c=%.o)
+CPPDEPS    := $(CPPSRCS:%.cpp=%.d)
+CDEPS      := $(CSRCS:%.c=%.d)
+STATICLIB  := $(TARGET:%.so=%.a)
+
+iner_all : $(TARGET) all
+
+$(TARGET):$(CPPOBJS) $(COBJS)
+ifeq "$(findstring $(DOTSO), $(TARGET))" "$(DOTSO)"
+	$(CPP) $(CPPOBJS) $(COBJS) -o $(TARGET) $(LLFLAGS)
+	#-$(AR) rcs $(STATICLIB) $(CPPOBJS) $(COBJS)
+else
+ifeq "$(findstring $(DOTA), $(TARGET))" "$(DOTA)"
+	-$(AR) rcs $(TARGET) $(CPPOBJS) $(COBJS)
+else
+	$(CPP) $(CPPOBJS) $(COBJS) -o $(TARGET) $(LFLAGS)
+endif
+endif
+
+$(CPPOBJS):%.o:%.cpp
+	$(CPP) -o $@ -c $< $(CFLAGS) $(INCLUDEFLAGS)
+$(COBJS):%.o:%.c
+	$(CC) -o $@ -c $< $(CFLAGS) $(INCLUDEFLAGS)
+$(CPPDEPS):%d:%.cpp
+	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDEFLAGS) > $@.$$$$
+	sed 's,\($*\).o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+-include $(CPPOBJS:.o=.d)
+-include $(COBJS:.o=.d)
+
+clean:
+	rm -f $(TARGET) $(SOURCE_DIR)/*.o $(SOURCE_DIR)/*.d  $(SOURCE_DIR)/*.d.* $(SOURCE_DIR)/$(STATICLIB)	
+	
+	
+	
+	
+	
+	
+	
+
