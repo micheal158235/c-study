@@ -1,0 +1,15 @@
+cd C:/Users/sz_yfpub13/Desktop/qianxiao/c++/study/c-study
+
+$ git commit -m "编写工程公共库的Makefile模板"
+[master d42b258] 编写工程公共库的Makefile模板
+ Committer: 研发外网共用账号13 <sz_yfpub13@jieshun.com.cn>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
