@@ -1,0 +1,1622 @@
+
+第八天：多态
+
+1. 多态与虚函数
+	1.1 静态联编(静态绑定)
+	1.2 动态联编
+	1.3 为什么需要虚函数
+	1.4 虚函数的声明和定义
+2. 虚函数的访问
+	2.1 对象名访问
+	2.2 指针访问
+	2.3 引用访问
+	2.4 类内访问
+	2.5 在构造函数或者析构函数中访问
+	2.6 虚函数表vftable
+3. 纯虚函数与抽象类
+	3.1 纯虚函数的声明和定义
+	3.2 抽象类
+	3.3 只定义了protected型构造函数的类也是抽象类
+	3.4 private构造函数与单件设计模式
+	3.5 虚析构函数
+4. 虚函数引入的二义性
+	4.1 多基派生
+	4.2 共同基类和虚继承
+5. 重载、覆盖和隐藏
+	5.1 重载
+	5.2 覆盖
+	5.3 隐藏
+6. 小结
+-------------------------------------------------------------------------
+第八天：多态
+
+	多态性是面向对象设计语言的基本特征。仅仅是
+将数据和函数捆绑在一起，进行类的封装，使用
+一些简单的继承，还不能算是真正应用了面向对
+象的设计思想。多态性是面向对象的精髓。多态
+性可以简单地概括为“一个接口，多种方法”，前
+面讲过的函数重载就是一种简单的多态，一个函
+数名（调用接口）对应着几个不同的函数原型
+（方法）。
+
+	警车鸣笛，普通人反应一般，逃犯听见会大惊失
+色。警车鸣笛（同一种行为），导致普通人和逃
+犯不同反应(多种形态)。
+
+	再如，指令“画出昆虫的图片”，对蚂蚁和对蜘蛛
+这2种昆虫画出的是不同的图片。
+
+-------------------------------------------------------------------------
+1. 多态与虚函数
+
+	更通俗地说，多态性是指同一个操作作用于不同
+的对象就会产生不同的响应；多态性分为静态多
+态性和动态多态性，其中函数重载和运算符重载
+属于静态多态性, 虚函数属于动态多态性。函数
+重载和运算符重载在前面已经讲过，虚函数是本
+章的重点，C++是依靠虚函数来实现动态多态的。
+在进一步讲述多态前，先来看几个概念。
+
+示例：
+//多态
+#include <iostream>
+using namespace std;
+class A
+{
+public:
+	int n;
+	virtual void fun()//虚函数
+	{
+		cout<<"funA\n";
+	}
+};
+
+class B:public A//B类继承A类，A是基类(父类)，B是派生类(子类)
+{
+public:
+	double d;
+	void fun()
+	{
+		cout<<"funB\n";
+	}
+};
+
+class C:public B
+{
+public:
+	double d;
+	void fun()
+	{
+		cout<<"funC\n";
+	}
+};
+
+int main()
+{
+	A a;
+	A * pa = &a;
+	pa->fun();
+	B b;
+	pa = &b;//通过基类指针指向派生类对象，这是多态的最常用的实现方式
+	pa->fun();//这就实现了多态
+	C c;
+	pa = &c;
+	pa->fun();
+	return 0;
+}
+
+-------------------------------------------------------------------------
+1.1 静态联编(静态绑定)
+
+	程序调用函数时，具体应使用哪个代码块是由编
+译器决定的。以函数重载为例，C++编译器根据传
+递给函数的参数和函数名决定具体要使用哪一个
+函数，称为联编（binding）。
+
+	编译器可以在编译过程中完成这种联编，在编译
+过程中进行的联编叫静态联编（static binding）
+或早期联编（early binding）。
+	
+-------------------------------------------------------------------------
+1.2 动态联编
+
+	在一些场合下，编译器无法在编译过程中完成联
+编，必须在程序运行时完成选择，因此编译器必
+须提供这么一套称为“动态联编”（dynamic 
+binding）的机制，也叫晚期联编（late 
+binding），C++通过虚函数来实现动态联编。
+
+-------------------------------------------------------------------------
+1.3 为什么需要虚函数
+
+示例：
+//为什么需要虚函数
+#include <iostream>
+using namespace std;
+
+class base				//基类base定义
+{
+public:
+//	virtual
+	void disp()			//基类base中的普通成员函数disp
+	{
+		cout << "hello,base" << endl;
+	}
+};
+
+class child1:public base//派生类child1从base派生而来
+{
+public:
+	void disp()			//派生类child1中定义的disp函数将base类中定义的disp函数隐藏
+	{
+		cout << "hello,child1" << endl;
+	}
+};
+
+class child2:public base//派生类child2从base派生而来
+{
+public:
+	void disp()			//派生类child2中定义的disp函数同样会隐藏base类中定义的disp函数
+	{
+		cout << "hello,child2" << endl;
+	}	
+};
+
+void display(base* pb)	//display函数，以base指针为参数
+{
+	pb->disp();
+}
+
+int main()
+{
+	base * pBase = NULL, obj_base;			//创建一个基类指针pBase，初始化为NULL,创建一base类对象obj_base
+	obj_base.disp();			//通过对象名调用disp函数
+
+	pBase = &obj_base;			//使用obj_base的地址为pBase赋值
+	pBase->disp();				//通过指针调用disp函数
+
+	child1 * pChild1 = NULL, obj_child1;	//创建一child1类指针pChild1，初始化为NULL,创建一child1类对象obj_child1
+	obj_child1.disp();			//通过对象名调用disp函数
+
+	pChild1 = &obj_child1;		//使用obj_child1的地址为pChild1赋值
+	pChild1->disp();			//通过指针调用disp函数
+
+	child2 * pChild2 = NULL, obj_child2;	//创建一child2类指针pChild2，初始化为NULL,创建一child2类对象obj_child2
+	obj_child2.disp();			//通过对象名调用disp函数
+
+	pChild2 = &obj_child2;		//使用obj_child2的地址为pChild2赋值
+	pChild2->disp();			//通过指针调用disp函数
+
+	cout << endl;
+
+	//测试在void base::disp()函数前加和不加virtual时下列指针式输出的不同!!!!!!!!!!!!!!!!!!
+	pBase = &obj_child1;		//使用obj_child1的地址为pBase赋值
+	pBase->disp();				//通过指针pBase调用disp函数
+	display(&obj_base);			//函数调用
+	display(&obj_child1);
+	display(&obj_child2);
+
+	cout << endl;
+
+	//(*指针).disp()式的调用
+	(*pBase).disp();
+
+	return 0;
+}
+
+	理解在下列基类函数前加和不加关键字virtual的不同：
+virtualvoid base::disp()
+{
+	cout<<"hello,base"<<endl;
+}
+
+	通过指针访问disp()：
+1. 不加virtual时，具体调用哪个版本的disp()只取决于
+指针本身的类型，和指针所指对象的类型无关。
+2. 而加virtual时，具体调用哪个版本的disp()不再取决
+于指针本身的类型，而是取决于指针所指对象的类型。
+
+-------------------------------------------------------------------------
+1.4 虚函数的声明和定义
+
+	虚函数的定义很简单，只要在成员函数原型前加一个关键字
+virtual即可。
+
+	如果一个基类的成员函数定义为虚函数，那么，它在所有派生类
+中也保持为虚函数；即使在派生类中省略了virtual关键字，也仍
+然是虚函数。
+
+	派生类中可根据需要对虚函数进行重定义，重定义的格式有一定
+的要求：
+1. 与基类的虚函数有相同的参数个数；
+2. 与基类的虚函数有相同的参数类型；
+3. 与基类的虚函数有相同的返回类型：或者与基类虚函数的相同，
+或者都返回指针（或引用），并且派生类虚函数所返回的指针
+（或引用）类型是基类中被替换的虚函数所返回的指针（或引
+用）类型的子类型（派生类型）。
+-------------------------------------------------------------------------
+示例：
+构造函数为什么不能为虚函数？
+class A
+{
+	A() {}
+};
+class B : public A
+{
+	B():A() {}
+};
+
+Main()
+{
+ B b;
+ B*pb = &b;
+}
+
+构造B类的对象时，
+1. 根据继承的性质，构造函数执行顺序是：
+A() B()
+2. 根据虚函数的性质，如果A的构造函数为虚函数，
+且B类也给出了构造函数，则应该只执行B类的构造函数，
+不再执行A类的构造函数。这样A就不能构造了。
+3. 这样1和2就发生了矛盾.
+
+-------------------------------------------------------------------------
+2. 虚函数的访问
+
+	对虚函数的访问方式不同，程序具体调用哪个函数可能也会有所不
+同。
+
+//虚函数的访问
+#include <iostream>
+using namespace std;
+
+class base					//基类定义
+{
+public:
+	virtual void disp()		//虚函数
+	{
+		cout << "hello, base" << endl;
+	}
+};
+
+class child : public base	//派生类定义
+{
+public:
+	void disp()				//虚函数的覆盖(对普通函数来说，是隐藏)
+	{
+		cout << "hello, child" << endl;
+	}
+};
+
+int main()
+{
+	return 0;
+}
+
+-------------------------------------------------------------------------
+2.1 对象名访问
+
+	和普通函数一样，虚函数一样可以通过对象名来调用，此
+时编译器采用的是静态联编。
+
+	通过对象名访问虚函数时, 调用哪个类的函数取决于定义
+对象名的类型。对象类型是基类时，就调用基类的函数；
+对象类型是子类时，就调用子类的函数。如：
+	obj_base.disp(); //调用基类虚函数
+	obj_child.disp(); //调用子类虚函数
+	
+	在子类中还可以使用作用域运算符来指定调用哪个类的函
+数。如：
+	obj_child.base::disp(); //调用基类虚函数
+	obj_child.child::disp();//调用子类虚函数
+	
+示例：
+//通过对象名访问虚函数时, 调用哪个函数取决于对象名的类型
+#include <iostream>
+using namespace std;
+
+class base
+{
+public:
+	virtual void disp()
+	{
+		cout << "hello,base" << endl;
+	}
+};
+
+class child:public base
+{
+public:
+	void disp()
+	{
+		cout << "hello,child" << endl;
+	}
+};
+
+int main()
+{
+	base obj_base;					//创建基类对象obj_base
+	child obj_child;				//创建派生类对象obj_child
+
+	obj_base.disp();				//通过对象名调用虚函数
+	obj_child.disp();				//通过对象名调用虚函数
+
+	obj_child.base::disp();			//通过类名加作用域限定符指明要调用的版本
+	obj_child.child::disp();		//通过类名加作用域限定符指明要调用的版本
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+2.2 指针访问
+
+	使用指针访问非虚函数时，编译器根据指针本身
+的类型决定要调用哪个函数，而不是根据指针指
+向的对象类型；
+
+	使用指针访问虚函数时，编译器根据指针所指对
+象的类型决定要调用哪个函数(动态联编)，而与
+指针本身的类型无关。
+
+	使用指针访问是虚函数调用的最主要形式。
+-------------------------------------------------------------------------
+示例：
+//通过指针访问虚函数
+#include <iostream>
+using namespace std;
+
+class base
+{
+public:
+	virtual void disp()
+	{
+		cout << "hello,base" << endl;
+	}
+};
+
+class child:public base
+{
+public:
+	void disp()
+	{
+		cout << "hello,child" << endl;
+	}
+};
+
+int main()
+{
+	base obj_base;			//创建一个基类对象
+	base* pBase = &obj_base;	//使用基类对象地址为基类指针赋值
+	pBase->disp();			//使用基类指针调用虚函数
+
+	child obj_child;		//创建一派生类对象
+	child* pChild = &obj_child;//使用派生类对象地址为派生类指针赋值
+	pChild->disp();			//使用派生类指针调用虚函数
+
+	cout << endl;
+
+	pBase = pChild;			//将派生类指针赋值给基类指针
+	pBase->disp();			//使用基类指针调用虚函数
+
+	pChild = (child *)&obj_base;//反向转换，使用基类对象地址为派生类指针赋值
+	pChild->disp();			//使用派生类指针调用虚函数，只取决于赋值对象
+
+	pChild->base::disp();	//使用类名加作用域限定符指明要调用的版本, 静态联编
+
+
+//	cout<<"good\n";
+//	typedef void (* P)();
+//	P ** p = (P **)&obj_base;
+//	(**p)();//调用虚函数
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+2.3 引用访问
+
+	1. 使用引用访问虚函数，与使用指针访问虚函数类似
+	2. 不同的是，引用一经声明后，引用变量本身无论如
+何改变，其调用的函数就不会再改变，始终指向其
+开始定义时的函数。因此在使用上有一定限制，但
+这在一定程度上提高了代码的安全性，特别体现在
+函数参数传递等场合中，可以将引用理解成一种
+“受限制的指针”
+-------------------------------------------------------------------------
+示例：
+//通过引用访问虚函数
+#include <iostream>
+using namespace std;
+
+class base
+{
+public:
+	virtual void disp()
+	{
+		cout << "hello,base" << endl;
+	}
+};
+
+class child:public base
+{
+public:
+	void disp()
+	{
+		cout << "hello,child" << endl;
+	}
+};
+
+int main()
+{
+	base obj_base;				//创建基类对象
+	base& rBase1 = obj_base;	//声明基类引用，用基类对象初始化
+	rBase1.disp();				//基类引用 调用虚函数: 基类中的disp版本
+
+	child obj_child;			//创建派生类对象
+	base& rBase2 = obj_child;	//声明基类引用，用派生类对象初始化
+	rBase2.disp();				//基类引用 调用虚函数: 派生类中的disp版本
+
+	cout << endl;
+
+	//引用一经声明后，其调用的函数就不会再改变
+	rBase1 = obj_child;			//引用本身不可以改变, 这里是将obj_child赋值给
+							//了rBase1指向的obj_base，相当于obj_base = obj_child;
+	rBase1.disp();				//还是调用原来的虚函数: 基类版本
+
+	rBase2 = obj_base;			//同上
+	rBase2.disp();				//还是调用原来的虚函数: 派生类版本
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+2.4 类内访问
+
+	在类内的成员函数中访问该类层次中的虚函数，
+要使用this指针。
+
+示例：
+//在类内的成员函数中访问该类层次中的虚函数，要使用this指针
+#include <iostream>
+using namespace std;
+
+class base					//基类定义
+{
+public:
+	virtual void disp()		//虚函数disp
+	{
+		cout<<"hello,base"<<endl;
+	}
+
+	void call_base_1()
+	{
+		this->disp();		//或直接用disp()
+	}
+
+	void call_base_2()
+	{
+		base::disp();		//去掉bass::再试试
+	}
+};
+
+class child:public base		//派生类定义
+{
+public:
+	void disp()				//对虚函数进行了覆盖定义
+	{
+		cout<<"hello,child"<<endl;
+	}
+
+	void call_child_1()
+	{
+		disp();				//等价于this->disp();
+	}
+
+//	函数call_base_1()在child类中虽然没有直接写出来，
+//	但还是继承过来了，默认和base类的代码是一样的
+//	void call_base_1()
+//	{
+//		this->disp();
+//	}
+
+//	函数call_base_2()在child类中虽然没有直接写出来，
+//	但还是继承过来了，默认和base类的代码是一样的
+//	void call_base_2()
+//	{
+//		base::disp();
+//	}
+};
+
+int main()
+{
+	base obj_Base;			//声明一个基类对象
+	child obj_Child;		//声明一个派生类对象
+	obj_Base.call_base_1();	//基类对象调用非虚函数call_base_1()
+	obj_Child.call_child_1();//派生类对象调用非虚函数call_child_1()
+
+	cout << endl;
+
+	base* pBase = &obj_Base;//声明一基类指针，并用基类对象地址为其初始化
+	pBase->call_base_1();	//使用基类指针在成员函数内调用虚函数
+	pBase->call_base_2();
+
+	cout << endl;
+
+	pBase = &obj_Child;		//用派生类对象地址为基类指针初始化
+	pBase->call_base_1();	//使用基类指针在成员函数内调用虚函数
+	pBase->call_base_2();
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+2.5 在构造函数或者析构函数中访问
+
+	构造函数和析构函数是特殊的成员函数，在其中
+访问虚函数时，C++采用静态联编，即在构造函数
+或析构函数内，即使是使用“this->虚函数名”的
+形式来调用，编译器仍将其解释为静态联编的“本
+类名::虚函数名”。
+
+示例：
+//在构造函数中访问虚函数时采用静态联编
+#include <iostream>
+using namespace std;
+
+class base
+{
+public:
+	base()
+	{
+		cout << "base构造函数中:";
+		disp();
+	}
+	~base()
+	{
+		cout << "base析构函数中:";
+		disp();
+	}
+	virtual void disp()
+	{
+		cout << "hello,base" << endl;
+	}
+};
+
+class child:public base
+{
+public:
+	//在构造函数中访问虚函数时采用静态联编
+	child()
+	{
+		cout << "child构造函数中:";
+		disp(); //等价于this->disp(); 也等价于child::disp();
+	}
+	~child()
+	{
+		cout << "child析构函数中:";
+		disp();
+	}
+	void disp()
+	{
+		cout << "hello,child" << endl;
+	}
+};
+
+int main()
+{
+	child obj_child; //创建派生类对象
+	child * pChild = new child();
+	base b;
+	delete pChild;
+	pChild = NULL;
+	return 0;
+}
+
+-------------------------------------------------------------------------
+2.6 虚函数表vftable
+
+	C++中的虚函数的实现一般是通过虚函数表。如果类中包含
+有虚函数，在用该类实例化对象时，对象的第一个成员将
+是一个指向虚函数表(vftable)的指针(vfptr)。虚函数表
+是一块连续的内存，它的每一项都记录了一个虚函数的入
+口地址。如果类中有N个虚函数，那么其虚函数表将有N*4
+字节的大小。它就像一个地图一样，指明了实际所应该调
+用的函数。
+
+	虚函数表是固定的东西，在编译的时候确定，虚函数指针
+vptr是在运行阶段确定的，而多态的实现是通过对象中的
+vptr指针指向不同的虚函数表实现的，在运行的时候指针
+指向是可以有变化的。
+
+	我们可以通过对象的地址得到这张虚函数表，然后就可以
+遍历其中的函数指针，并调用相应的虚函数。
+-------------------------------------------------------------------------
+示例：
+#include <iostream>
+using namespace std;
+class A
+{
+//	void * vfptr;
+	int n;
+	virtual void fun1(){cout<<"fun1"<<endl;};
+	virtual void fun2(){cout<<"fun2"<<endl;};
+	virtual void fun3(){cout<<"fun3"<<endl;};
+};
+void main()
+{
+	A a;
+	A * p = &a;
+	typedef void ( * P)();
+	int n = *(int *)p;
+	int m = *(int *)(n+8);
+	P pfun = (P)m;
+	pfun();
+	cout<<sizeof(a)<<endl;
+}
+-------------------------------------------------------------------------
+//通过指针访问虚函数
+#include <iostream>
+using namespace std;
+
+class base
+{
+public:
+	virtual void disp()
+	{
+		cout << "hello,base" << endl;
+	}
+};
+
+class child:public base
+{
+public:
+	void disp()
+	{
+		cout << "hello,child" << endl;
+	}
+};
+
+int main()
+{
+	base obj_base;			//创建一个基类对象
+	base* pBase = &obj_base;	//使用基类对象地址为基类指针赋值
+	pBase->disp();			//使用基类指针调用虚函数
+
+	child obj_child;		//创建一派生类对象
+	child* pChild = &obj_child;//使用派生类对象地址为派生类指针赋值
+	pChild->disp();			//使用派生类指针调用虚函数
+
+	cout << endl;
+
+	pBase = pChild;			//将派生类指针赋值给基类指针
+	pBase->disp();			//使用基类指针调用虚函数
+
+	pChild = (child *)&obj_base;//反向转换，使用基类对象地址为派生类指针赋值
+	pChild->disp();			//使用派生类指针调用虚函数，只取决于赋值对象
+
+	pChild->base::disp();	//使用类名加作用域限定符指明要调用的版本, 静态联编
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+3. 纯虚函数与抽象类
+
+	当在基类中无法为虚函数提供任何有实际意义的
+定义时，可以将该虚函数声明为纯虚函数，它的
+实现留给该基类的派生类去做。
+
+-------------------------------------------------------------------------
+3.1 纯虚函数的声明和定义
+
+	纯虚函数是一种特殊的虚函数，其格式一般如下：
+class 类名
+{ 
+	virtual 类型 函数名 (参数表)=0; 
+	…
+}; 
+
+	纯虚函数不能被直接调用，仅提供一个与派生类
+一致的接口。
+-------------------------------------------------------------------------
+示例：
+//纯虚函数的申明和定义
+#include <iostream> 
+using namespace std;
+
+class A						//类A定义
+{
+public:
+	virtual void disp() = 0;//纯虚函数，类A作为抽象类
+};
+
+class B:public A			//B由抽象类A派生而来
+{
+public:
+	virtual void disp()		//此处virtual可省略，继承
+	{
+		cout << "This is from B" << endl;
+	}
+};
+
+class C: public B			//类C从类B派生而来
+{
+public:
+	virtual void disp()
+	{
+		cout << "This is from C" << endl;
+	}
+};
+
+void display(A *a)			//display函数，以A类指针对参数
+{
+	a->disp();
+}
+
+int main()
+{
+	B *pB = new B;			//正确。但如果删除B类中disp()的定义就会编译出错, 因为删除后，B就还包含纯虚函数。
+	C *pC = new C;			//正确。如果删除C类中的disp()的定义，但保留B中的定义，依然正确，因为B中的disp()不是纯虚函数了
+							//但如果B, C类中都没有disp()的定义，就会编译出错，因为C还是纯虚函数。
+
+	display(pB);			//取决于为指针赋值的数据类型
+	display(pC);
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+3.2 抽象类
+
+	一个类可以包含多个纯虚函数。只要类中含有一个纯虚函数，该
+类便为抽象类。一个抽象类只能作为基类来派生新类，不能创建
+抽象类的对象，如例中的A类便是抽象类，创建A类的对象是非法
+的，如：
+A a; //错误：A为抽象类
+
+但可声明一个指向抽象类的指针，如：
+A*a=NULL;
+A*a=new B;
+
+应注意：“A*a=new A;”非法，因为该语句试图创建A的对象。
+
+	和普通的虚函数不同，纯虚函数不能被自动继承，在派生类中必
+须对基类中虚函数进行重定义，或者在派生类中再次将该虚函数
+声明为纯虚函数，否则编译器将提示错误信息。这说明，抽象类
+的派生类也可以是抽象类，只有在派生类中给出了基类中所有纯
+虚函数的实现时，该派生类便不再是抽象类。和纯虚函数一样，
+抽象类只起到提供统一接口的作用。
+
+示例：
+//抽象类
+#include <iostream>
+#include <cmath>
+using namespace std;
+
+#define PI 3.1415926			//宏定义
+
+class Figure					//图形基类定义
+{
+public:
+	virtual float Area() =0;	//纯虚函数，因此Figure类是抽象类，无法声明其对象
+	virtual void DispName() =0;
+};
+
+class Circle:public Figure		//在抽象类Figure的基础上派生Circle圆类
+{
+private:						//private成员列表
+	float radius;				//半径
+public:
+	Circle(float r = 0)			//构造函数
+	{
+		radius = r;
+	}
+	virtual void DispName()		//覆盖实现了虚函数DispName，此处virtual去掉没有影响
+	{
+		cout << "圆:" << endl;
+ 	}
+	virtual float Area()		//覆盖实现了虚函数Area,用来计算圆的面积，virtual去掉同样没有影响
+	{
+		return PI * radius * radius;
+	}
+};
+
+class Rectangle:public Figure	//在抽象类Figure的基础上派生Rectangle矩形类
+{
+private:
+	float x;					//两个边长x和y
+	float y;
+public:
+	Rectangle(float xp = 0, float yp = 0)//构造函数
+	{
+		x = xp;
+		y = yp;
+	}
+	virtual void DispName()		//覆盖实现了虚函数DispName，此处virtual去掉没有影响
+	{
+		cout << "矩形:" << endl;
+	}
+	virtual float Area()		//覆盖实现了虚函数Area,用来计算矩形面积，virtual去掉同样没有影响
+	{
+		return x * y;
+	}
+};
+
+class Triangle:public Figure	//在抽象类Figure的基础上派生Triangle三角形类
+{
+private:						//三角形的三个边长
+	float x;
+	float y;
+	float z;
+public:
+	Triangle(float xp = 0, float yp = 0, float zp = 0)//构造函数
+	{
+		x = xp;
+		y = yp;
+		z = zp;
+	}
+	virtual void DispName()		//覆盖实现了虚函数DispName，此处virtual去掉没有影响
+	{
+		cout << "三角形:" << endl;
+	}
+	virtual float Area()		//覆盖实现了虚函数Area,用来计算三角形面积，virtual去掉同样没有影响
+	{
+		float p = (x + y + z) / 2;
+		return sqrt(p * (p - x) * (p - y) * (p - z));
+	}
+};
+
+int main()
+{
+//	Figure f;						//错误, 抽象类不能实例化
+//	Figure *pF = new Figure();		//错误, 抽象类不能使用new分配内存空间
+	Figure *pF = NULL;				//虽然不能创建Figure类对象，但可声明Figure型的指针
+	
+	Circle c(3);					//声明一个圆对象，半径为3。
+	Rectangle r(1.2f, 3.6f);		//声明一个矩形对象，其边长分别为1.2和3.6
+	Triangle t(6, 7, 8);			//声明一个三角形对象，其边长分别为6、7和8
+	//上面3句正确，可以这样实例化，因为Circle, Rectangle和Triangle不再是抽象类了,
+	//其基类的2个虚函数DispName()和Area()都已经有定义了。如果删除其中任何一个定义, 就会编译出错。
+	
+	pF = &c;						//用圆对象c的地址为pF赋值
+	pF->DispName();					//调用DispName时，对应着Circle类中的版本
+	cout << pF->Area() << endl;		//调用Area时，对应着Circle类中的版本
+	cout << endl;
+	
+	pF = &r;						//用矩形对象r的地址为pF赋值
+	pF->DispName();					//调用DispName时，对应着Rectangle类中的版本
+	cout << pF->Area() << endl;		//调用Area时，对应着Rectangle类中的版本
+	cout << endl;
+	
+	pF = &t;						//用三角形对象t的地址为pF赋值
+	pF->DispName();					//调用DispName时，对应着Triangle类中的版本
+	cout << pF->Area() << endl;		//调用Area时，对应着Triangle类中的版本
+	cout << endl;
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+3.3 只定义了protected型构造函数的类也是抽象类
+
+	对一个类来说，如果只定义了protected型的构造
+函数而没有提供public构造函数，无论是在外部
+还是在派生类中都不能创建该类的对象，但可以
+由其派生出新的类，这种能派生新类，却不能创
+建自己对象的类是另一种形式的抽象类。
+
+示例：
+//只定义了protected类型构造函数的类也是抽象类
+#include <iostream>
+using namespace std;
+
+class Base					//基类定义
+{
+private:
+	int x;
+
+protected:
+	Base(int xp = 0)		//构造函数声明为protected型
+	{
+		x = xp;
+	}
+
+public:
+	void disp()
+	{
+		cout << "x is " << x << endl;
+	}
+};
+
+class Child:public Base
+{
+public:
+//	Base b;		//错误，在派生类中不能创建Base类对象
+	Child(int xpp):Base(xpp)	//但派生类中可调用protected构造函数
+	{
+	}
+};
+
+int main()
+{
+//	Base b;		//错误，在外部不能创建Base类对象
+	Child c(1);
+	c.disp();
+	return 0;
+}
+
+-------------------------------------------------------------------------
+3.4 private构造函数与单件设计模式
+
+	前面讲了构造函数可以为public型、也可以为
+protected型。其实，构造函数也可以是private
+型的。
+
+	此时，不能直接在外部函数和派生类中使用“类名
++对象名”的形式来创建该类对象，但可以通过类
+的static函数成员来创建类的实例。
+
+	与此类似，也可以使用static成员函数为包含
+protected型构造函数的类创建对象。
+-------------------------------------------------------------------------
+示例：
+#include <iostream>
+using namespace std;
+class A
+{
+private:
+	int n;
+	A(int nn){n = nn;}
+public:
+	static A* CreatA(int nn)
+	{
+		return new A(nn);		//用new动态申请一个A类的对象，并返回对象首地址
+//		static A a(nn);		//注释掉上一行，然后取消本行和下面一行的注释，再次运行看看结果！！！
+//		return &a;
+	}
+	void disp()
+	{
+		cout<<"n = "<<n<<endl;
+	}
+};
+int main()
+{
+	A *a = A::CreatA(5);
+	A *b = A::CreatA(8);
+	A *c = A::CreatA(10);
+	a->disp();
+	b->disp();
+	c->disp();
+	return 0;
+} 
+
+-------------------------------------------------------------------------
+3.5 虚析构函数
+
+	虽然构造函数不能被定义成虚函数，但析构函数
+可以定义为虚函数，一般来说，如果类中定义了
+虚函数，析构函数也应被定义为虚析构函数，尤
+其是类内有申请的动态内存，需要清理和释放的
+时候。
+-------------------------------------------------------------------------
+	以下代码的析构函数是非虚的，释放时会造成
+child类的析构函数得不到执行，从而内存泄漏：
+
+//析构函数调用不当带来的内存泄漏
+#include <iostream>
+using namespace std;
+
+class Base							//基类定义
+{
+private:							//字符指针
+	char* data;
+
+public:
+	Base(int x)							//无参构造函数
+	{
+		data = new char[64];		//动态内存申请
+		cout<<"Base类构造函数被调用"<<endl;
+	};
+
+//	virtual
+	~Base()							//析构函数
+	{
+		delete [] data;				//data指向的内存被释放
+		cout<<"Base类析构函数被调用"<<endl;
+	};
+};
+
+class Child : public Base			//Child类由基类Base派生而来
+{
+private:
+	char* m_data;					//增添的字符指针成员
+
+public:
+	Child():Base()					//构造函数，初始化表中执行基类的构造函数
+	{
+		m_data = new char[64];		//动态申请内存，并将首地址赋给m_data
+		cout<<"Child类构造函数被调用"<<endl;
+	};
+
+	~Child()						//析构函数
+	{
+		delete [] m_data;			//内存资源释放
+		cout<<"Child类析构函数被调用"<<endl;
+	};
+};
+
+int main()
+{
+	Base pp;
+	Base *pB = new Child;			//动态申请了一块Child大小的内存，赋给Base基类指针
+	delete pB;						//基类析构函数执行
+
+
+	//执行结果为：
+	// Base类构造函数被调用
+	// Child类构造函数被调用
+	// Base类析造函数被调用
+
+	//Child类的析构函数没有被执行。这是因为上述代码的析构函数是非虚的，
+	//而pB是Base *类型，因此析构时只执行Base类的析构函数, 而child类的
+	//析构函数得不到执行，从而导致内存泄漏
+
+	//解决方法：将Base类的析构函数申明为虚函数即可. 即在 ~Base() 前面加上 virtual 
+
+	return 0;
+}
+-------------------------------------------------------------------------
+	改进代码，使得base类和child类的析构
+函数都得到了执行，避免了内存泄漏：
+
+//使用虚析构函数解决内存泄漏问题
+#include <iostream>
+using namespace std;
+
+class Base					//基类定义
+{
+private:
+	char* data;				//字符指针
+
+public:
+	Base()					//无参构造函数
+	{
+		data = new char[64];	//动态内存申请
+		cout << "Base类构造函数被调用" << endl;
+	};
+
+	virtual ~Base()			//虚析构函数
+	{
+		delete [] data;		//data指向的内存被释放
+		cout << "Base类析构函数被调用" << endl;
+	};
+};
+
+class Child : public Base		//Child类由基类Base派生而来
+{
+private:
+	char* m_data;				//增添的字符指针成员
+
+public:
+	Child():Base()				//构造函数，初始化表中执行基类的构造函数
+	{
+		m_data = new char[64];	//动态申请内存，并将首地址赋给m_data
+		cout << "Child类构造函数被调用" << endl;
+	};
+
+	~Child()					//析构函数，继承虚拟virtual
+	{
+		delete [] m_data;		//内存资源释放
+		cout << "Child类析构函数被调用" << endl;
+	};
+};
+
+class GrandChild:public Child	//GrandChild类由Child类派生而来
+{
+private:
+	char* mm_data;				//在Child类基础上增加的字符指针成员mm_data
+
+public:
+	GrandChild():Child()		//构造函数
+	{
+		mm_data = new char[64];	//动态内存申请
+		cout << "GrandChild类构造函数被调用" << endl;
+	};
+
+	~GrandChild()				//虚析构函数，virtual从继承结构中得来
+	{
+		delete [] mm_data;		//内存释放
+		cout << "GrandChild类析构函数被调用" << endl;
+	};
+};
+
+int main()
+{
+	Base *pB = new Child;			//动态申请了一块Child大小的内存，赋给Base基类指针
+	delete pB;						//Child类的析构函数执行，释放内存，不会泄露
+
+	cout << endl;
+
+	Child* pC = new GrandChild;		//动态申请了一块GrandChild大小的内存，赋给Child类指针
+	delete pC;						//GrandChild类的析构函数执行，释放内存，不会泄露
+
+	cout << endl;
+
+	GrandChild *pG = (GrandChild *)new Base;
+	delete pG;	//如果去掉基类析构函数前的virtual, 执行到delete [] mm_data时会报内存错误, 因为mm_data根本就没有new
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+4. 虚函数引入的二义性
+
+	在讲解继承与派生的时候讨论了继承时的二义
+性问题，同样，虚函数存在二义性问题，本节分
+别从多基派生、共同基类（非虚基派生）、共同
+基类（虚基派生）3个方面展开讨论。
+
+-------------------------------------------------------------------------
+4.1 多基派生
+
+示例：
+//多基派生引起的虚函数访问二义性问题
+#include <iostream>
+using namespace std;
+
+class A
+{
+public:
+	virtual void a() //虚函数
+	{
+		cout << "a() in A" << endl;
+	}
+	virtual void b() //虚函数
+	{
+		cout << "b() in A" << endl;
+	}
+	virtual void c() //虚函数
+	{
+		cout << "c() in A" << endl;
+	}
+};
+
+class B
+{
+public:
+	virtual void a() //虚函数
+	{
+		cout << "a() in B" << endl;
+	}
+	virtual void b() //虚函数
+	{
+		cout << "b() in B" << endl;
+	}
+	void c() //非虚函数
+	{
+		cout << "c() in B" << endl;
+	}
+	void d() //非虚函数
+	{
+		cout << "d() in B" << endl;
+	}
+};
+
+class C:public A, public B
+{
+public:
+	virtual void a() //虚函数，覆盖
+	{
+		cout << "a() in C" << endl;
+	}
+	void c() //特殊
+	{
+		cout << "c() in C" << endl;
+	}
+	void d() //非虚函数，隐藏
+	{
+		cout << "d() in C" << endl;
+	}
+};
+
+int main()
+{
+	C c;			//声明一个派生类对象c
+//	c.b();			//b()在A, B类中都定义为虚函数, C中无法确定使用哪个版本, 
+					//引起二义性错误. 解决: c.B::b();
+	cout << "c.b();会引起二义性错误" << endl;
+
+	cout << endl;
+
+	A* pA = &c;		//用派生类对象c的地址为A类指针赋值
+	pA->a();		//a()在A, B , C三个类中都是虚函数, 调用C类的c(), 输出: a() in C
+	pA->b();		//b()在A, B类中都是虚函数, C类中没有定义, 编译器无法确定使用哪个
+					//版本, 只能采用静态联编. 由于pA的类型是A *，所以输出: b() in A
+	pA->c();		//c()在A中为虚函数, B中为普通函数, C中进行了重定义. 此时输出取决
+					//于指针pA的类型A, 由于c()在A中为虚函数, 故按照虚函数的规则处理,输出c() in C
+
+	cout << endl;
+
+	B* pB = &c;		//用派生类对象c的地址为B类指针赋值
+	pB->a();		//a()在A, B , C三个类中都是虚函数, 调用C类的c(), 输出: a() in C
+	pB->b();		//b()在A, B类中都是虚函数, C类中没有定义, 编译器无法确定使用哪个
+					//版本, 只能采用静态联编. 由于pB的类型是B *，所以输出: b() in B
+	pB->c();		//c()在A中为虚函数, B中为普通函数, C中进行了重定义. 此时输出取决
+					//于指针pB的类型B, 由于c()在B中为普通函数, 故按照普通函数的规则处理,输出c() in B
+	pB->d();		//d()在B, C类中都定义为普通函数, C中的d()会隐藏基类B中的d(), 
+					//但pB类型为B *, 故输出d() in B
+
+	cout << endl;
+
+	C *pC = &c;
+	pC->a();		//a()在A, B , C三个类中都是虚函数, 调用C类的c(), 输出: a() in C
+//	pC->b();		//b()在A, B类中都定义为虚函数, C中无法确定使用哪个版本, 
+					//引起二义性错误. 解决: pC->B::b();
+	cout << "pC->b();会引起二义性错误" << endl;
+	pC->c();		//c()在A中为虚函数, B中为普通函数, C中进行了重定义(?). 此时输出取决
+					//于指针pC的类型C, c()在C中无论是虚函数还是普通函数, 都输出c() in C
+	pC->d();		//d()在B, C类中都定义为普通函数, C中的d()会隐藏基类B中的d(), 
+					//但pC类型为C *, 故输出d() in C
+
+	return 0;
+}
+
+-------------------------------------------------------------------------
+4.2 共同基类和虚继承
+
+	继承中讲到，对非虚基派生方式，无法用汇聚
+处的派生类对象为共同基类的对象或指针赋值，
+即无法使用共同基类指针指向汇聚处的派生类对
+象，这无法发挥出多态的威力，采用虚基派生的
+方式只保留基类的一份拷贝，这时，可以用汇聚
+处的派生类对象为共同基类的对象或指针赋值。
+-------------------------------------------------------------------------
+示例：
+// 共同基类和虚继承
+#include <iostream>
+using namespace std;
+
+class A
+{
+public:
+	virtual void a() //虚函数
+	{
+		cout << "a() in A" << endl;
+	}
+	virtual void b() //虚函数
+	{
+		cout << "b() in A" << endl;
+	}
+	virtual void c() //虚函数
+	{
+		cout << "c() in A" << endl;
+	}
+	virtual void d() //虚函数
+	{
+		cout << "d() in A" << endl;
+	}
+};
+
+class B : /*virtual */public A
+{
+public:
+	void a() //虚函数
+	{
+		cout << "a() in B" << endl;
+	}
+	void b() //虚函数
+	{
+		cout << "b() in B" << endl;
+	}
+};
+
+class C : /*virtual */public A
+{
+public:
+	void a() //虚函数
+	{
+		cout << "a() in C" << endl;
+	}
+	void b() //虚函数
+	{
+		cout << "b() in C" << endl;
+	}
+};
+
+class D : public B, public C
+{
+public:
+	void a() //虚函数
+	{
+		cout << "a() in D" << endl;
+	}
+	void d() //虚函数
+	{
+		cout << "d() in D" << endl;
+	}
+};
+
+int main()
+{
+	A *pA;
+
+	pA = (B *)new D;
+	pA->a();		//a()在4个类中都定义成虚函数,  输出取决于new D的类型D *, 故输出a() in D
+	pA->b();		//b()在ABC中都定义成了虚函数, 输出取决于pA的(B*)类型, 故输出b() in B
+	pA->c();		//c()只在A中定义成了虚函数, 故输出c() in A
+	pA->d();		//d()只在AD中定义成了虚函数, 输出取决于new D的类型D *, 故输出d() in D
+
+	cout << endl;
+
+	pA = (C *)new D;
+	pA->a();		//同上
+	pA->b();		//b()在ABC中都定义成了虚函数, 输出取决于pA的(C*)类型, 故输出b() in C
+	pA->c();		//同上
+	pA->d();		//同上
+
+	//如果B, C类均使用virtual派生, 即取消注释/*virtual */, 
+	//则D类会编译二义性出错，D类不知道该用哪个版本的a(), b()
+
+	return 0;
+}
+-------------------------------------------------------------------------
+// 共同基类和虚继承
+#include <iostream>
+using namespace std;
+
+class A
+{
+public:
+	virtual void a() //虚函数
+	{
+		cout << "a() in A" << endl;
+	}
+};
+
+class B : virtual public A
+{
+public:
+	void a() //虚函数
+	{
+		cout << "a() in B" << endl;
+	}
+};
+
+class C : virtual public A
+{
+public:
+	void a() //虚函数
+	{
+		cout << "a() in C" << endl;
+	}
+};
+
+class D : public B, public C
+{
+};
+
+int main()
+{
+	/*B, C类均使用virtual派生,则D类会编译二义性出错，D类不知道该用哪个版本的a()
+	原因：这是编译器预期的行为。事先设计好了。D类的虚函数表的对应的位置里既不能
+	存放B:a()的地址，也不能存放C::a()的地址，但是存放A::a()的话也不符合继承和
+	虚函数的特性，故出错*/
+	return 0;
+}
+
+-------------------------------------------------------------------------
+5. 重载、覆盖和隐藏
+
+	对类层次中的同名成员函数来说，有3种关系：重
+载（overload）、覆盖（override）和隐藏
+（hide、oversee），理清3种关系，有助于写出
+高质量代码。
+
+-------------------------------------------------------------------------
+5.1 重载
+
+	重载的概念相对简单，只有在同一类定义中的同名成员函
+数才存在重载关系，主要特点是函数的参数类型和数目有
+所不同，但不能出现函数参数的个数和类型均相同，仅仅
+依靠返回值类型不同来区分的函数，这和普通函数的重载
+是完全一致的。另外，重载和成员函数是否是虚函数无关，
+举例来说：
+class A
+{
+	……
+	virtual intfun();
+	void fun(int);
+	void fun(double,double);
+	……
+};
+
+	上述A类定义中的3个fun函数便是重载关系。
+-------------------------------------------------------------------------
+5.2 覆盖
+
+	覆盖是指：在派生类中覆盖基类中的同名函数，
+要求两个函数的参数个数、参数类型、返回类型
+都相同，且基类函数必须是虚函数。如：A->B
+
+	然后以类B再派生出类C时，类C继承的便是覆盖后
+的B类的虚函数版本，除非在C类中对该虚函数进
+行重定义。B->C
+-------------------------------------------------------------------------
+示例：
+// 覆盖
+#include <iostream>
+using namespace std;
+
+class A
+{
+public:
+	virtual void fun1(int, int) {cout<<"fun1 in A\n";}
+	virtual int  fun2(char *){cout<<"fun2 in A\n";return 0;}
+};
+
+class B : public A
+{
+public:
+	void fun1(int, int){cout<<"fun1 in B\n";}
+};
+
+class C : public B
+{
+public:
+	int fun2(char *) {cout<<"fun2 in C\n";return 1;}
+};
+
+int main()
+{
+	A *pA = new C;
+	pA->fun1(11, 22);
+	pA->fun2("11-22");
+	return 0;
+}
+-------------------------------------------------------------------------
+// 覆盖的另一个例子
+#include <iostream>
+using namespace std;
+
+class A
+{
+public:
+	int n;
+	A()
+	{
+		n = 100;
+	}
+	void fun()
+	{
+		cout<<"A\n";
+	}
+};
+
+class B : public A
+{
+public:
+	int n;
+	B()
+	{
+		n = 200;
+	}
+	void fun()
+	{
+		cout<<"B\n";
+	}
+};
+
+int main()
+{
+	B b;
+	cout<<b.A::n<<endl;
+	cout<<b.B::n<<endl;
+	b.A::fun();
+	b.B::fun();
+	return 0;
+}
+
+	B中的fun1覆盖了A中的fun1，同时继承了A中的
+fun2。
+	C类继承了B中的fun1，同时重定义覆盖了fun2。
+
+-------------------------------------------------------------------------
+5.3 隐藏
+
+	隐藏指的是在某些情况下，派生类中的函数屏蔽
+了基类中的同名函数，这些情况包括：
+1). 2个函数参数相同，但基类函数不是虚函数。
+和覆盖的区别在于基类函数是否是虚函数。
+2). 2个函数参数不同，无论基类函数是否是虚函
+数，基类函数都会被屏蔽。和重载的区别在于
+两个函数在不在同一类中。
+
+示例：
+//类层次结构中的函数隐藏
+#include <iostream>
+using namespace std;
+
+class A					//类A的定义
+{
+public:
+	void fun(int xp)	//非虚成员函数fun，参数为int型
+	{
+		cout << xp << endl;
+	}
+};
+
+class B:public A		//类B由类A派生而来
+{
+public:
+	void fun(char* s)	//覆盖，oversee，参数为字符串
+	{
+		cout << s << endl;
+	}
+//	void fun(int xp)	//重载. 如果没有定义该重载函数, main()中的b.fun(2)语句会出错
+//	{
+//		A::fun(xp);
+//	}
+};
+
+int main()
+{
+	B b;				//声明一个B类对象
+	b.fun("hello");		//字符串参数版本
+	b.fun(2);			//错误，发生覆盖，找不到fun(int).
+						//解决方法: 在B中重载fun(int)版本的函数, 即取消B类中的注释代码的注释
+	return 0;
+}
+
+-------------------------------------------------------------------------
+6. 小结
+
+	多态性是面向对象程序设计的又一重要特征，C++中，多态性是通
+过虚函数实现的。通过虚函数，可以用同一个指针（尤其是指向
+基类的指针）访问不同对象的成员函数。多态配合第10章中讲解
+的类型适应，可以为类层次中的函数调用提供统一接口，具有十
+分重要的意义。
+
+	本节课介绍了静态联编和动态联编的含义，进一步引出了虚函
+数的定义方式，不同方式的访问，虚函数的响应形式有所不同。
+在某些情况下，在基类中可能无法定义虚函数，这时可以将其设
+置为纯虚函数，此时的类称为抽象类。纯虚函数和抽象类只能提
+供接口的作用，抽象类无法创建对象。
+
+	和普通函数一样，多基派生时，虚拟函数也会带来二义性问题，
+这在类设计时要合理规划，避免出现编译器无法判断的情况。站
+在整个类层次的角度来看，其中的同名成员函数存在3种关系：重
+载（overload）、覆盖（override）和隐藏（hide、oversee），
+理解同名函数间的关系有助于代码的阅读和书写，提高程序设计
+的效率。	
+
+-------------------------------------------------------------------------
+课后作业及思考
+
+实现一个接口，求面积的类这个接口（抽象类）：get（名字） get（面积）
+圆类     继承  求面积的这个类    get（名字） get（面积）
+矩形类   继承  求面积的这个类    get（名字） get（面积）
+IShape *pIShape = CCircle("circle", 4);
+cout<<pIShape->getName()<<":"<<pIShape->Area()<<endl;
+
+
+
+
+	用多态技术模拟实现本节课开始所举的 “画出昆虫的图片”的
+例子：
+1. A公司负责设计昆虫祖先类这个迷你类库，写好后卖给众
+多的用户去使用，请帮助A公司实现该类库。要求用户使
+用时只需重载相应的虚函数和实现其中的代码即可，其他
+工作尽量帮助用户完成，让用户少写代码，提高效率。
+2. 使用A公司的昆虫祖先类派生出蚂蚁和蜘蛛这2种具体的昆
+虫，并画出各自的图片。不得修改A公司提供的类库。
+
+
+
+3.4
+运行结果为什么是（5 5 5）
+3.5
+1、为什么要加delete pB才会释放内存，  Base pp这样实例化就能自动释放内存？
+2、Base与Child的析构函数不同名，virtual怎么会对他们起作用？
+3、Child():Base(）是什么意思？
+-------------------------------------------------------------------------
+

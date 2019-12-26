@@ -1,0 +1,293 @@
+//代码8-20
+#include <iostream>
+using namespace std;
+
+class point //类定义
+{
+	int x; //默认private型成员变量x和y
+	int y;
+
+public:
+	point(int xp = 0, int yp = 0)//构造函数
+	{
+		x = xp;
+		y = yp;
+	}
+	
+	~point()					//析构函数
+	{
+		x = -1;
+	}
+
+	void SetX(int xp) //非const成员函数SetX，设置x
+	{
+		x = xp;
+	}
+
+	void SetY(int yp) //非const成员函数SetY，设置y
+	{
+		y = yp;
+	}
+
+	void print() const //const成员函数print，不能修改x和y
+	{
+		cout << "x: " << x << " ,y: " << y << endl;
+	}
+};
+
+//#include "point.h"
+using namespace std;
+
+int main()
+{
+	point pt(3, 4);			//声明一个普通类变量pt
+	pt.SetX(5);				//使用pt可调用非const成员函数
+	pt.SetY(6);
+	pt.print();				//pt也可调用const成员函数
+
+	const point ptC(1, 2);	//声明一个const对象（类变量）
+	//ptC.SetX(8);			//错误，ptC是const对象，只能调用const成员函数
+	//ptC.SetY(9);			//错误，ptC是const对象，只能调用const成员函数
+	ptC.~point();			//正确，const对象也能调用非const类型的析构函数
+	ptC.print();			//正确，const对象只能调用const成员函数
+
+	return 0;
+}
+
+
+#include <iostream>
+using namespace std;
+
+class point
+{
+	int x;
+	int y;
+
+public:
+	point(int xp = 0, int yp = 0)
+	{
+		x = xp;
+		y = yp;
+	}
+	
+	void print()
+	{
+		cout << "x: " << x << ", y: " << y << endl;
+	}
+};
+
+
+//代码8-21
+#include <iostream>
+using namespace std;
+
+class cex
+{
+private:
+	int a;			//int型，在一般系统上占据4个内存字节	4
+	char b;			//char型，占1个内存字节					1 + 3 (3浪费)
+	float c;		//单精度浮点型，占4个内存字节			4 + 4 (4浪费)
+	double d;		//double型，占8个内存字节				8
+	short e[5];		//short型数组，每个元素占2个内存字节	8 + 2
+	char & f;		//引用，当成指针维护					2 + 4 (2浪费)
+	double & g;		//引用，当成指针维护					4 + 4 (后4浪费)
+	static int h;	//static成员，公共内存，不影响单个对象的大小 0
+	
+public:
+	cex():f(b), g(d) //和构造函数，引用成员必须在初始化表中初始化
+	{
+	}
+	void print()	//成员函数的定义，普通成员函数不影响对象大小
+	{
+		cout << "Hello" << endl;
+	}
+};
+
+int cex::h = 0;		//static成员的初始化
+
+int main()
+{
+	cex c;
+	cout << "sizeof(cex):  " << sizeof(cex) << endl; //输出类对象的大小sizeof(cex) = 48
+	return 0;
+}
+
+
+//对象数组的声明
+#include <iostream>
+using namespace std;
+
+class point
+{
+private:
+	int x;
+	int y;
+
+public:
+//	point(int ix = 0, int iy = 0)
+	point(int ix, int iy)
+	{
+		static int iCount = 0;
+		iCount++;
+		cout << iCount << " .构造函数被调用" << endl;
+		x = ix;
+		y = iy;
+	}
+};
+
+int main()
+{
+	//错误: 没有合适的构造函数，因为它要调用无参的构造函数
+	point pt1[2];
+
+	//正确
+	point pt2[2] = {point(1,2), point(3,4)};
+
+	//正确, 自动确定数组的元素个数
+	point pt3[] = {point(1,2), point(3,4)};
+
+	//错误: 后3个元素会自动调用无参的构造函数，但这样的构造函数不存在
+	point pt4[5] = {point(1,2), point(3,4)};
+
+	//解决方法: 给上述构造函数的2个参数定义缺省值
+	return 0;
+}
+
+
+//8-22 使用new/delete为类指针分配/释放内存
+#include <iostream>
+using namespace std;
+
+class point
+{
+private:								//private数据成员列表
+	int x;
+	int y;
+
+public:
+	point(int xp=0,int yp=0)			//构造函数，带缺省参数值
+	{
+		x=xp;
+		y=yp;
+		cout<<"构造函数被调用"<<endl;
+	}
+
+	~point()							//析构函数
+	{
+		cout<<"析构函数被调用"<<endl;
+	}
+
+	void print()						//成员函数，类内部实现
+	{
+		cout<<"x:  "<<x<<", y:  "<<y<<endl;
+	}
+};
+
+int main()
+{
+	point* p = new point(4,5);	//动态申请一块内存，存储point类对象，并将地址赋值给point型指针p
+	p->print();					//使用指针加－>调用成员函数
+	delete p;					//释放动态申请的内存，防止内存泄露
+	p=NULL;						//养成良好习惯，防止野指针
+	return 0;
+}
+
+
+//8-23 使用new和delete[]为对象数组分配/释放动态空间
+#include <iostream>
+using namespace std;
+
+class point
+{
+private: //private数据成员列表
+	int x;
+	int y;
+
+public:
+	point(int xp = 0, int yp = 0) //构造函数，带缺省参数值
+	{
+		x = xp;
+		y = yp;
+		cout << "构造函数被调用" << endl;
+	}
+
+	~point() //析构函数
+	{
+		cout << "析构函数被调用" << endl;
+	}
+
+	void print() //成员函数，类内部实现
+	{
+		cout << "x:  " << x << ", y:  " << y << endl;
+	}
+
+	void Set(int xp, int yp) //成员函数，类内部实现，用来修改成员x和y
+	{
+		x = xp;
+		y = yp;
+	}
+};
+
+int main()
+{
+	point * p = new point[2];	//申请一块动态内存，连续存放连个point对象，将首地址赋值给point指针p
+	p[0].print();				//可以将指针当成数组名，使用下标运算符访问对应对象，等价性
+	p[1].Set(4, 5);				//调用数据元素（对象）的成员函数Set
+	p[1].print();
+	delete[] p;					//释放申请的动态内存
+	p = NULL;					//养成良好习惯，防止野指针
+	return 0;
+}
+
+
+//使用malloc和free只能申请相应大小的内存，而不能调用构造函数和析构函数，当然也就没有对象产生
+#include <iostream>
+using namespace std;
+
+class point
+{
+private: //private数据成员列表
+	int x;
+	int y;
+
+public:
+	point(int xp = 0, int yp = 0) //构造函数，带缺省参数值
+	{
+		x = xp;
+		y = yp;
+		cout << "构造函数被调用" << endl;
+	}
+
+	~point() //析构函数
+	{
+		cout << "析构函数被调用" << endl;
+	}
+
+	void print() //成员函数，类内部实现
+	{
+		cout << "x:  " << x << ", y:  " << y << endl;
+	}
+
+	void Set(int xp, int yp) //成员函数，类内部实现，用来修改成员x和y
+	{
+		x = xp;
+		y = yp;
+	}
+};
+
+int main()
+{
+//	point *p = new point(1, 2);
+	point * p = (point *)malloc(sizeof(point));
+	p->Set(1, 2);
+	p->print();	//虽然一样可以设置坐标，输出坐标，但并未创建对象，最多也只能说拥有了一个对象的内存，并且向这段内存里写入了数据，不建议这样做。
+	p->~point();	//也可以主动调用析构函数，但这样做没有什么意义
+	free(p);
+//	delete p;
+	p = NULL;
+	return 0;
+}
+
+
+
+

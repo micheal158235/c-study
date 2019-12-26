@@ -1,0 +1,685 @@
+
+第二天：类与对象
+
+一、回顾
+1. C和C++有什么不同
+
+2. C++新增特性
+
+二、类与对象
+1. 面向对象的基本概念
+2. C++类的定义
+3. C++类的实例
+4. C++类的使用
+5. 对象的创建和撤销
+6. 构造函数
+==================================================================
+
+二、类与对象
+
+C++的四大特性：抽象、封装、继承、多态、模板
+
+1. 面向对象的基本概念
+	C++用类来描述对象，类是对现实世界中相似事物的抽象
+		同是“双轮车”的摩托车和自行车，有共同点，也有许多
+	不同点。“车”类是对摩托车、自行车、汽车等相同点和
+	不同点的提取与抽象。
+	
+2. 类的定义分为两个部分：数据（相当于属性）和对数据的操作
+（相当于行为）。
+		类就是数据类型，是用户定义的数据类型，对象可以看成某个
+	类的实例（某个类的变量）
+		类和对象的关系与前面介绍的“结构”和“结构体变量”的关系
+相似，但又有不同，在本章稍后类的定义一节中后具体说明这一问题。
+
+3. 类与对象的关系：
+	对象需要从属性和行为两个方面进行描述，类是对象的封装。类的
+使用主要有以下几个步骤：
+
+	定义类：C++中，分别用数据成员和函数成员来表现对象的属性和行为。
+		类的定义强调"信息隐藏"，将实现细节和不允许外部随意访问的部分
+		屏蔽起来。因此，在类的定义中，需要用public或者private将类成员
+		区分开，外界不能访问程序的private型的数据成员，只能访问public
+		数据成员，对象间的信息传达也只能通过public成员函数，保证了对象
+		的数据安全。
+		
+	实现类：即进一步定义类的成员函数，使各个成员函数相互配合以实现接
+		口对外提供的功能，类的定义和实现是由类设计者完成的。
+		
+	使用类：通过该类声明一个属于该类的变量（即对象），
+		并调用其接口（即public型的数据成员或函数成员），这
+		是使用者的工作。
+	
+2. C++类的定义
+① 类定义的基本形式
+	C++中使用关键字class定义一个类，其基本形式
+如下：
+class 类名
+{
+private:
+私有成员变量和函数
+protected:
+保护成员变量和函数
+public:
+公共成员变量和函数
+}; //不要漏写了这个分号;	
+
+实例：
+/*****************************************
+ *	对一台计算机来说，它有如下特征：
+ *	属性：品牌、价格。
+ *	方法：输出计算机的属性。
+ *	如下代码8-1实现了computer类的定义：
+ *****************************************/
+//文件example801.h
+class computer
+{
+private: //私有成员列表，这里的private可以省略
+	char brand[20];
+	float price; //不能在这里初始化，如float price=0是错误的
+public: //公共成员列表（接口）
+	void print();
+	void SetBrand(char*sz);
+	void SetPrice(float pr);
+};
+
+===============================================================
+
+② class 和 struct
+class和struct的唯一区别在于：
+	struct的默认访问方式是public，而class为private。
+	
+PS：通常使用class来定义类，而把struct用于
+	只表示数据对象、没有成员函数的类。
+
+3. C++类的实现
+	类的实现就是定义其成员函数的过程，类的实现
+有两种方式：
+① 在类定义时同时完成成员函数的定义。
+② 在类定义的外部定义其成员函数。
+============================================================
+实例1：
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+struct computer //类定义，起到接口作用
+{
+	char brand[20];
+	float price;
+	//3个public成员函数的原型声明
+	void print()
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+	void fun(int n)
+	{
+		cout<<"hello n = "<<n<<endl;
+	}
+};
+int main()
+{
+	struct computer com1 = {"abc", 3000}; //声明创建一个类对象
+	com1.print(); //调用print()函数输出信息
+	com1.fun(5);
+	return 0;
+}
+============================================================
+实例二：
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+class computer //类定义，起到接口作用
+{
+private://私有的成员只能在类的内部访问
+	char brand[20];
+	float price;
+	
+public://公有的成员可以在任何地方访问
+	void setBrand(char * p)
+	{
+		strcpy(brand, p);
+	}
+	void setPrice(float f)
+	{
+		price = f;
+	}
+	void setAll(char * p, float f)
+	{
+	
+		strcpy(brand, p);price = f;
+	}
+	void print()
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+int main()
+{
+	computer com1, com2; //声明创建一个类对象
+	com1.setBrand("abcd");
+	com1.setPrice(3000);
+	com2.setAll("xyd", 4000);
+	com1.print(); //调用print()函数输出信息
+	com2.print(); //调用print()函数输出信息
+	return 0;
+}
+
+/* public void computer::setBrand(char * p){
+	brand = p;
+} */
+============================================================
+3.1	在类定义的外部定义成员函数
+	在类定义的外部定义成员函数时，应使用作用域
+操作符（::）来标识函数所属的类，即有如下形
+式：
+返回类型 类名::成员函数名(参数列表)
+{
+	函数体
+}
+其中，返回类型、成员函数名和参数列表必须与
+类定义时的函数原型一致。
+============================================================
+实例3：
+class computer //类定义，起到接口作用
+{
+private:
+	char brand[20];
+	float price;
+public:
+	//3个public成员函数的原型声明
+	void print();
+	void SetBrand(char * sz);
+	void SetPrice(float pr);
+};
+
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+void computer::print() //成员函数的实现，注意作用域限定符的使用
+{
+	cout << "品牌：" << brand << endl;
+	cout << "价格：" << price << endl;
+}
+
+void computer::SetBrand(char * sz)
+{
+	strcpy(brand, sz); //字符串复制
+}
+
+void computer::SetPrice(float pr)
+{
+	price = pr;
+}
+
+int main()
+{
+	computer com1; //声明创建一个类对象
+	com1.SetPrice(5000); //调用public成员函数SetPrice设置price
+	com1.SetBrand("Lenovo"); //调用public成员函数SetBrand设置Brand
+	com1.print(); //调用print()函数输出信息
+	return 0;
+}
+============================================================
+
+4. C++类的使用
+	定义了一个类之后，便可以如同用int、double等
+类型符声明简单变量一样，创建该类的对象，称
+为类的实例化。
+	由此看来，类的定义实际上是定义了一种类型，
+类不接收或存储具体的值，只作为生成具体对象
+的“蓝图”，只有将类实例化，创建对象（声明
+类的变量）后，系统才为对象分配存储空间。
+============================================================
+实例4：声明一个对象
+class computer //类定义
+{
+private:
+	char brand[20];
+	float price;
+public:
+	void print();
+	void SetBrand(char * sz);
+	void SetPrice(float pr);
+};
+
+#include <iostream>
+using namespace std;
+
+void computer::print() //成员函数的实现
+{
+	cout << "品牌：" << brand << endl;
+	cout << "价格：" << price << endl;
+}
+
+void computer::SetBrand(char * sz)
+{
+	strcpy(brand, sz); //字符串复制
+}
+
+void computer::SetPrice(float pr)
+{
+	price = pr;
+}
+
+int main() //主函数
+{
+	computer com1; //声明了computer类对象（或说类变量）com1
+	com1.SetBrand("Lenovo");//调用public成员函数SetBrand设置品牌brand
+	com1.SetPrice(8000); //调用public成员函数SetPrice设置品牌price
+	com1.print(); //信息输出
+	return 0;
+}
+============================================================
+
+课堂练习：	
+	定义一个学生类，类中分别有private、protected、
+public类型的成员数据和成员函数，并在成员函
+数内部和类的外部测试各种成员数据和成员函数
+的可访问性。
+
+//创建文件student.cpp,并在文件中定义SetInfo和Display成员函数的实现。
+#include <iostream>
+using namespace std;
+//1、创建文件student.h，并在文件中声明类
+class CStudent
+{
+private:
+	int m_iId;
+	char m_szName[32];
+public:
+	//将学生ID和姓名赋值给成员变量
+	void SetInfo(int iId, char * pszName);
+	//打印出成员变量	
+	void Display();
+};
+
+//将学生ID和姓名赋值给成员变量
+void CStudent::SetInfo(int iId, char * pszName)
+{
+	m_iId = iId;
+	strcpy(m_szName, pszName);//用VS会报错，并且推荐你用strcpy_s,因为该编译器担心使用这个C语言库会不安全
+}
+
+//打印出成员变量	
+void CStudent::Display()
+{
+	cout << "the student named " << m_szName << "'s id is " << m_iId << endl;
+}
+
+//最后在main.cpp中使用该类
+void main()
+{
+	//栈中实现
+	CStudent stud;
+	stud.SetInfo(3, "Tom");
+	stud.Display();
+	
+	//堆中实现
+	CStudent *pStud = new CStudent;
+	pStud->SetInfo(0, "Bill");
+	pStud->Display();
+
+	(*pStud).Display();
+	
+	delete pStud;
+	pStud = NULL;
+}
+
+============================================================
+
+5. 对象的创建和撤销
+	通过自定义的公共成员函数SetBrand和
+SetPrice实现对数据成员的初始化，实际上，C++为类提
+供了两种特殊的成员函数来完成同样的工作：
+1>. 一是构造函数，在对象创建时自动调用，用以完成对
+象成员变量等的初始化及其他操作（如为指针成员动
+态申请内存空间等）；如果程序员没有显式的定义它，
+系统会提供一个默认的构造函数。
+2>. 另一个是析构函数，在对象撤销时自动调用，用以执
+行一些清理任务，如释放成员函数中动态申请的内存
+等。如果程序员没有显式的定义它，系统也会提供一
+个默认的析构函数。
+
+5.1 构造函数的作用
+	当对象被创建时，构造函数自动被调用。构造函数有一些
+独特的地方：函数的名字与类名相同，没有返回类型和返
+回值，即使是void也不能有。
+	–给对象一个标识符。
+	–为对象数据成员开辟内存空间。
+	–完成对象数据成员的初始化（在函数体内进行，由程序
+	员完成）。
+	
+	在执行函数体之前，
+构造函数已经为对象的数据成员开辟了内存空间，这时，
+在函数体内对数据成员的初始化便是顺理成章了。
+============================================================
+实例5：构造函数
+#include <iostream>
+using namespace std;
+class point
+{
+private:
+	int xPos;
+	int yPos;
+public:
+	point()//默认的构造函数
+	{
+		cout<<"hello"<<endl;
+	}
+
+	~point()//默认的析构函数
+	{
+		cout<<"world"<<endl;
+	}
+};
+void main()
+{
+	point p;
+	point p1;
+	point * p2 = new point;
+	delete(p2);
+}
+============================================================
+5.2 构造函数可以有参数
+	编译器自动生成的缺省构造函数是无参的，实际
+上，构造函数可以接收参数，在对象创建时提供
+更大的自由度.
+	一旦用户定义了构造函数，系统便不再提供默认
+构造函数。
+实例6：
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int xPos;
+	int yPos;
+public:
+	point(int x, int y) //有参构造函数
+	{
+		cout << "对象创建时构造函数被自动调用" << endl;
+		xPos = x;
+		yPos = y;
+	}
+	void print() //输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+//#include "point.h"
+int main()
+{
+//	point pt0;			//错误的调用，因为我们已经显示的定义了一个带参数的构造函数
+//	pt0.print();		//输出pt0的信息
+	point pt1(3, 4);	//调用有参构造函数声明point类变量（类对象）pt1
+	pt1.print();		//输出pt1的信息
+	return 0;
+}
+============================================================
+5.3 构造函数支持重载
+	一旦程序员为一个类定义了构造函数，编译器便
+不会为类自动生成缺省构造函数，因此，如果还
+想使用无参的构造函数，如“point pt0;”的形式
+必须在类定义中显式定义一个无参构造函数。
+	构造函数就会出现两个，会不会有问题呢？
+	
+实例7：构造函数重载
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分泌诶代表x轴和y轴坐标
+	int xPos;
+	int yPos;
+public:
+	point(int x, int y)//有参构造函数
+	{
+		cout << "有参构造函数的调用" << endl;
+		xPos = x;
+		yPos = y;
+	}
+	point() //无参构造函数
+	{
+		cout << "无参构造函数的调用" << endl;
+		xPos = 0;
+		yPos = 0;
+	}
+	void print()//输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+#include "point.h"
+int main()
+{
+	point pt1(3, 4);	//调用有参构造函数声明point类变量（类对象）pt1
+	pt1.print();		//输出pt1的信息
+	point pt2;			//调用无参构造函数声明point类变量（类对象）pt2
+	pt2.print();		//输出pt2的信息
+	return 0;
+}
+============================================================
+5.4 构造函数允许按参数缺省方式调用
+	代码中的构造函数可以作如下定义：
+point(int x＝0,int y＝0)
+{
+	cout<<"对象创建时构造函数被自动调用"<<endl;
+	xPos=x;
+	yPos=y;
+}
+	此时，可在创建对象时省略参数，下列语句都是合法的：
+point pt; //x和y都采用默认值0
+point pt(3); //x为3，y采用默认值0
+point pt(3,4);//x为3，y为4，两个参数都不采用默认值
+
+实例8：构造函数缺省值
+#include <iostream>
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int xPos;
+	int yPos;
+public:
+	point(int x = 0, int y = 0) //有参构造函数
+	{
+		cout << "对象创建时构造函数被自动调用" << endl;
+		xPos = x;
+		yPos = y;
+	}
+	void print() //输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+#include "point.h"
+int main()
+{
+	point pt0;		//两个值都采用默认值
+	pt0.print();		
+	point pt1(3, 4);	//两个参数都不采用默认值
+	pt1.print();		//输出pt1的信息
+	return 0;
+}
+============================================================
+
+5.5 初始化表达式1
+	除了在构造函数体内初始化数据成员外，还可以通过成员初始化表达式来
+完成。
+point(int x,int y)
+{
+	cout<<"有参构造函数的调用"<<endl;
+	xPos=x;
+	yPos=y;
+}
+等价于：
+point(int x,int y):xPos(x),yPos(y)
+{
+	cout<<"有参构造函数的调用"<<endl;
+}
+
+实例9：
+#include <iostream>
+
+using namespace std;
+class point //point类定义，在定义同时实现其成员函数
+{
+private: //私有成员，分别代表x轴和y轴坐标
+	int yPos;
+	int xPos;
+public:
+	point(int x = 0, int y = 0): yPos(y), xPos(yPos)//初始化表达式
+	{
+		cout << "两个参数的构造函数被自动调用" << endl;
+//		xPos = 10;
+//		yPos = 20;
+	}
+
+	void print() //输出信息
+	{
+		cout << "xPos: " << xPos << ",yPos: " << yPos << endl;
+	}
+};
+
+int main()
+{
+	point p1(3, 4);
+	p1.print();
+	return 0;
+}
+============================================================
+练习：
+–1、写程序，测试在初始化成员列表各个成员初始化的
+顺序。结论：初始化的顺序和声明时的顺序一致。
+–2、写程序，测试在初始化成员列表中和在构造函数体
+中赋值两者的先后顺序。结论：初始化成员列表的赋值
+语句先执行，构造函数体中的赋值语句后执行。
+
+5.6 析构函数
+	① 构造函数在创建对象时被系统调用，而析构函数在对象被
+撤销时被自动调用，相比构造函数，析构函数要简单的多。
+析构函数有如下特点：
+	–与类同名，之前冠以波浪号，以区别于构造函数。
+	–析构函数没有返回类型，也不能指定参数，因此，析构
+	函数只能有一个，不能被重载。
+	–对象超出其作用域被销毁时，析构函数会被自动调用。
+	
+	② 如果用户没有显式地定义析构函数，编译器将为类生成“缺
+省析构函数”，缺省析构函数是个空的函数体，只清除类的
+数据成员所占据的空间，但对类的成员变量通过new和
+malloc动态申请的内存无能为力，因此，对于动态申请的
+内存，应在类的析构函数中通过delete或free进行释放，
+这样能有效避免对象撤销造成的内存泄漏。
+
+实例10：析构函数
+#include <iostream>
+#include <cstring>
+using namespace std;
+class computer
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(const char * sz, float p)
+	{
+		brand = new char[strlen(sz) + 1]; //对象创建时为brand分配一块动态内存
+		strcpy(brand, sz); //字符串复制
+		price = p;
+	}
+	~computer()
+	{
+		delete[] brand; //对象别撤销时，释放内存，避免泄露
+		brand = NULL;
+		cout << "清理现场" << endl;
+	}
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer comp("Dell", 7000); //调用构造函数声明computer变量comp
+	comp.print(); //信息输出
+	return 0;
+}
+============================================================
+
+5.7 显式调用析构函数
+	程序员不能显式调用构造函数，但却可以调用析
+构函数控制对象的撤销，释放对象所占据的内存
+空间，以更高效地利用内存.
+#include "computer.h"
+int main()
+{
+	computer comp("Dell",7000);
+	comp.print();
+	comp.~computer();//显式调用析构函数，comp被撤销
+	return 0;
+} //注意这里comp对象释放时析构函数也被隐式调用了一次
+	
+	虽然可以显式调用析构函数，但不推荐这样做，
+因为可能带来重复释放指针类型变量所指向的内
+存等问题。
+
+实例11：显示调用析构函数
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+class computer
+{
+private:
+	char * brand; //指针成员
+	float price;
+public:
+	computer(const char * sz, float p)
+	{
+		brand = new char[strlen(sz) + 1]; //对象创建时为brand分配一块动态内存
+		strcpy(brand, sz); //字符串复制
+		price = p;
+	}
+
+	~computer()
+	{
+//		if(brand != NULL)
+//		{
+			delete[] brand; //对象别撤销时，释放内存，避免泄露
+//			brand = NULL;	//如果注释掉本句，则在显式调用析构
+						//函数后，退出时会因为重复释放而报内存错误
+//		}
+
+		cout << "清理现场" << endl;
+	}
+
+	void print() //信息输出
+	{
+		cout << "品牌：" << brand << endl;
+		cout << "价格：" << price << endl;
+	}
+};
+
+int main()
+{
+	computer comp("Dell",7000);
+	comp.print();
+	comp.~computer();//显式调用析构函数，合法，comp被撤销
+	return 0;
+}	//注意这里comp对象释放时析构函数也被隐式调用了一次
+
+
+6. 构造函数
+
+
+

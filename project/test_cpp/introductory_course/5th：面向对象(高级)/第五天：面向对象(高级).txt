@@ -1,0 +1,925 @@
+
+第五天：面向对象(高级)
+
+1. 类作用域
+2. 类定义的作用域与可见域
+3. 对象的生存期、作用域和可见域
+	3.1 先定义，后实例化
+	3.2 对象内存释放与堆内存
+4. 友元
+	4.1 友元之非成员函数
+	4.2 友元之成员函数
+	4.3 友元函数的重载
+	4.4 友元类
+	4.5 友元是否破坏了封装性
+5. 运算符重载
+	5.1 运算符重载规则
+	5.2 以成员函数形式重载运算符
+
+小结
+作业
+
+---------------------------------------------------------------------------
+
+1. 类作用域
+	作用域可分为类作用域、类名的作用域以及对象的作用域几部分
+内容。
+	在类中定义的成员变量和成员函数的作用域是整个类，这些名称
+只有在类中（包含类的定义部分和类外函数实现部分）是可见的，
+在类外是不可见的，因此，可以在不同类中使用相同的成员名。
+另外，类作用域意味着不能从外部直接访问类的任何成员，即使
+该成员的访问权限是public，也要通过对象名来调用，对于
+static成员，要指定类名来调用。
+	如果发生“屏蔽”现象，类成员的可见域将小于作用域，但此时可
+借助this指针或“类名::”形式指明所访问的是类成员，这有些类
+似于使用“::”访问全局变量。
+---------------------------------------------------------------------------
+示例：
+//变量的作用域
+#include <iostream>
+using namespace std;
+
+int x = 100; //定义性声明，全局int型变量x
+int z = 200; //定义性声明，全局int型变量z
+
+class Example //Example类定义
+{
+private:
+	int x; //默认为private的成员列表
+	int y;
+public:
+	Example(int xp = 0, int yp = 0) //构造函数
+	{
+		x = xp;
+		y = yp;
+	}
+	void print(int x) //成员函数print，形参为x
+	{
+		cout << "传递来的参数:  " << x << endl; //形参x覆盖掉了成员x和全局变量x
+		cout << "成员x:  " << (this->x) << ", 成员y:  " << y << endl;//此处的y指的是成员y，如果要访问成员x，可使用this指针
+		cout << "除了this指针外，还可以使用类名::的形式：" << endl;
+		cout << "成员x:  " << Example::x << ", 成员y:  " << y << endl;//或使用类名加作用域限定符的形式指明要访问成员x
+		cout << "全局x:  " << (::x) << endl; //访问全局变量x
+		cout << "全局z:  " << z << endl; //没有形参和数据成员会对全局变量z构成屏蔽，直接访问z即可
+	}
+};
+
+int main()
+{
+	Example ex1; //声明一个Example类的对象ex1
+	ex1.print(5); //调用成员函数print()
+	return 0;
+}
+
+---------------------------------------------------------------------------	
+2. 类定义的作用域与可见域
+	和函数一样，类的定义没有生存期的概念，但类定义有作用域和可见域。
+	使用类名创建对象时，首要的前提是类名可见，类名是否可见取决于类定义的可见域，
+该可见域同样包含在其作用域中，类本身可被定义在3种作用域内，这也是类定义的
+作用域：
+	（1）全局作用域
+	在函数和其他类定义的外部定义的类称为全局类，绝大多数的C++类是定义在该作用
+域中，我们在前面定义的所有类都是在全局作用域中，全局类具有全局作用域。
+	（2）类作用域(类中类、嵌套类)
+	一个类可以定义在另一类的定义中，这是所谓嵌套类，举例来说，如果类A定义在类B
+中，如果A的访问权限是public，则A的作用域可认为和B的作用域相同，不同之处在
+于必须使用B::A的形式访问A的类名。当然，如果A的访问权限是private，则只能在B
+类内部使用创建A类的对象，无法在B类外部创建A类的对象。
+	（3）块作用域
+	类的定义在代码块中，这是所谓局部类，该类完全被块包含，其作用域仅仅限于定义
+所在块，不能在块外使用类名声明该类的对象。包括普通代码块和函数代码块两种情
+况。
+	（4）类名也存在覆盖
+	和普通变量的覆盖原则一样，类名也存在“屏蔽”和“覆盖”，不过，依旧可使用作用域
+声明符“::”指定具体使用的类名，如“::类名”访问的是全局类，使用“外部类::嵌套
+类”访问嵌套类。
+---------------------------------------------------------------------------
+示例：
+//嵌套类(类中类)
+#include <iostream>
+using namespace std;
+
+class line //line类定义
+{
+public:
+	class point //point类定义在line类内，且为public属性，外部可访问
+	{
+	private: //point类内私有成员列表
+		int x;
+		int y;
+
+	public:
+		point(int xp = 0, int yp = 0) //point类构造函数，带缺省参数值
+		{
+			x = xp;
+			y = yp;
+		}
+
+		void printpoint(); //point类成员函数原型，外部实现
+	};
+
+private:
+	point p1, p2; //line内两个point对象成员
+
+public:
+	line(int x1, int y1, int x2, int y2):p1(x1, y1), p2(x2, y2)//构造函数，初始化表
+	{
+	}
+
+	void printline() //输出提示信息
+	{
+		p1.printpoint(); //调用对象成员的公共接口
+		cout << "  ------->  ";
+		p2.printpoint(); //调用对象成员的公共接口
+		cout << endl;
+	}
+};
+
+void line::point::printpoint() //point类中函数printpoint()的实现，注意双重作用域限定符
+{
+	cout << "( " << x << " , " << y << " )";
+}
+
+int main()
+{
+	line line1(1, 2, 3, 4);	//调用line类构造函数，声明一个line类的对象line1
+	line1.printline();		//输出提示信息
+
+	line::point pt(1, 3);	//以line::point访问point类定义，声明一个point类的对象pt
+	pt.printpoint();		//输出提示信息
+
+	cout << endl;			//为整齐美观，换行
+	return 0;
+}
+---------------------------------------------------------------------------
+//类中类 嵌套类
+#include <iostream>
+using namespace std;
+
+class  B
+{
+public:
+	class A
+	{
+	public:
+		int na;
+		void funA(){cout<<"funA:\n";}
+	};
+	int nb;
+	A aa;
+public:
+	void funB()
+	{
+		cout<<"funB:\n";
+		aa.funA();
+	}
+};
+
+int main()
+{
+	B b;
+	b.funB();
+	B::A a;		//必须class A的权限是public才能在B的外部定义A类的对象
+	a.funA();
+	return 0;
+}
+
+---------------------------------------------------------------------------
+//块作用域
+#include <iostream>
+using namespace std;
+//class A{
+//	int n;
+//};
+int main()
+{
+	{
+		class A	//定义在代码块中的类是局部类
+		{
+		public:
+			double d;
+			void fun(){cout << "funA\n";}
+		};
+		A a; //类A只能在这对大括号中访问，超出大括号则A不可见
+		a.fun();		
+	}
+
+//	A a;	//错误，不能在代码块的外面访问类A
+//	a.fun();
+
+	return 0;
+}
+---------------------------------------------------------------------------
+//块作用域
+#include <iostream>
+using namespace std;
+
+void function()
+{
+	class A		//定义在函数中的类也是局部类
+	{
+	public:
+		double d;
+		void fun(){cout << "funA\n";}
+	};
+//	int i, j;
+	A a;
+	a.fun();
+}
+
+int main()
+{
+	function();
+//	A b;	//错误，A在函数function中定义，是局部类，只能在该函数中访问
+	return 0;
+}
+
+---------------------------------------------------------------------------
+//类名也存在覆盖
+#include <iostream>
+using namespace std;
+class A{
+	int n;
+};
+int main()
+{
+
+	class A{double d;};
+	::A a;
+	A aa;
+
+	cout<<sizeof(a)<<endl;
+	cout<<sizeof(aa)<<endl;
+	return 0;
+}
+
+---------------------------------------------------------------------------
+3. 对象的生存期、作用域和可见域
+	类名无生存期，只有作用域和可见域。
+
+	对象有生存期，对象的生存期也是对象中所有非
+静态成员变量的生存期，这些成员变量都随着对
+象的创建而创建，随着对象的撤销而撤销。
+
+	对象的生存期、作用域和可见域取决于对象的创
+建位置，同样有全局、局部、类内之分，和前面
+关于普通变量的介绍并无区别。
+---------------------------------------------------------------------------
+关于对象创建有几点问题需要强调：
+
+3.1 先定义，后实例化
+	类的定义一定要在类对象声明之前，因为编译器要知道需要为对象分配多
+大的内存空间，仅仅对类进行声明是不够的，如：
+class B; //声明
+B objectB; /创建B类的对象。错误
+class B
+{
+	……
+}; //B类定义
+
+但是，如果不创建B类的对象，而仅仅是声明一个指向类型B对象的指针
+（或引用），是可行的。如：
+class B; //声明
+B* pB=NULL; //创建B类的指针。正确
+B* pC=new B; //创建B类的对象。错误
+class B
+{
+	……
+}; //B类定义
+---------------------------------------------------------------------------
+示例：
+#include <iostream>
+using namespace std;
+
+class point;	//申明
+point ptA;					//错误, 类对象的创建必须在类定义之后, 因为该语句需要调用构造函数
+point *pB = NULL;			//正确
+point *pC = new point();	//错误, 因为new语句会导致调用构造函数
+
+class point
+{
+private:
+	int x;
+	int y;
+
+public:
+	point(int ix = 0, int iy = 0):x(ix), y(iy) {}
+};
+
+int main()
+{
+	return 0;
+}
+
+---------------------------------------------------------------------------
+3.2 对象内存释放与堆内存
+
+	一种普遍的误解是“如果对象被撤销，其占据的内
+存空间被释放，那么对象创建时和函数执行中通
+过new和malloc申请的动态内存也会被自动释放”，
+实际上，除非显式地用delete或free释放，申请
+的动态内存不会随着对象的撤销而撤销，相反，
+撤销了对象，却没有释放动态内存反而会引起内
+存泄露。
+
+	当然，在程序结束时，操作系统会回收程序所开
+辟的所有内存。尽管如此，还是要养成
+new/delete、malloc/free配对的编程习惯，及时
+释放已经无用的内存。
+
+---------------------------------------------------------------------------
+4. 友元
+
+	一般来说，类的私有成员只能在类的内部访问，
+类外的函数是不能访问它们的。
+
+	但是，可以将一个函数定义为某个类的友元函数，
+这时该函数就可以访问该类的私有成员了。
+
+	同时，也可以把另一个类B定义为本类A的友元类，
+这样B类就可以访问A类的任何成员了。
+---------------------------------------------------------------------------
+4.1 友元之非成员函数
+	
+	在类的定义中用friend声明了一个外部函数或其
+他类的成员函数(public和private均可）后，这
+个外部函数称为类的友元函数。
+
+	友元函数声明的基本格式为：
+		friend 函数原型;
+		
+	友元函数中可访问类的private成员。
+	
+	用下面的比喻形容友元函数可能比较恰当，将类
+比作一个家庭，类的private成员相当于家庭的秘
+密，一般的外人是不允许探听这些秘密的，只有
+friend（朋友）才有权限探听这些秘密。
+---------------------------------------------------------------------------
+示例：
+//友元之非成员函数
+#include <iostream>
+using namespace std;
+class A{
+private:
+	int n;
+	friend void fun();//声明fun是类A的友元函数,那么fun就可以访问A的私有成员
+public:
+	A(){n = 10;}
+
+};
+A a;
+void fun()
+{
+	cout<<a.n<<endl;
+}
+int main()
+{
+	fun();
+	return 0;
+}
+---------------------------------------------------------------------------
+
+//友元之非成员函数
+#include <cmath>	//使用计算平方根的函数sqrt要用到的头文件
+#include <iostream>
+using namespace std;
+
+class Point										//Point类定义
+{
+private:
+	int x, y;
+//	friend float dis(Point &p1, Point & p2);	//友元函数的声明，声明位置没有关系，可以是public，也可是private
+	
+public:
+	Point(int i = 0, int j = 0)					//构造函数，带缺省参数值
+	{
+		x = i;
+		y = j;
+	}
+	
+	void disp()									//成员函数
+	{
+		cout << "(" << x << "," << y << ")";
+	}
+};
+
+float dis(Point & p1, Point & p2)			//友元函数的实现
+{
+	//友元函数中可访问类的private成员
+	float d = sqrt((p1.x - p2.x)*(p1.x - p2.x)+(p1.y - p2.y)*(p1.y - p2.y));
+	return d;
+}
+
+int main()
+{
+	Point p1(1, 2), p2(4, 5);				//声明两个Point类的对象p1和p2
+	p1.disp();								//显示点p1的信息
+	
+	cout << "与";
+	p2.disp();								//显示点p2的信息
+	
+	cout << "距离=" << dis(p1, p2) << endl;	//利用友元函数计算两点举例
+	
+	return 0;
+}
+
+---------------------------------------------------------------------------
+4.2 友元之成员函数
+
+	A类的成员函数作为B类的友元函数时，必须先定义A类，而
+不仅仅是声明它。
+
+	注意：将其他类的成员函数申明为本类的友元函数后，该
+友元函数并不能变成本类的成员函数。也就是说，朋友并
+不能变成家人。
+---------------------------------------------------------------------------
+成员形式的友元函数见代码如下：
+//友元之成员函数
+#include <iostream>
+using namespace std;
+class A;
+class B
+{
+public:
+	void fun(A a);
+};
+class A{
+private:
+	int n;
+	friend void B::fun(A a);//声明fun是类A的友元函数,fun就可以访问A的所有成员
+public:
+	A(){n = 10;}
+	
+};
+
+void B::fun(A a)
+{
+	cout << a.n << endl;
+}
+
+int main()
+{
+	A aa;
+	B b;
+	b.fun(*(new A));//匿名对象。
+	b.fun(aa);//匿名对象。
+	return 0;
+}
+
+---------------------------------------------------------------------------
+	Line类的dis()函数本来是不能访问Point.x和Pint.y这种
+Point类的private成员的，但在Point类中将dis()申明为
+友元函数后就能访问了。但dis()函数依然不是Point类的
+成员函数。也就是说，dis()只是Point类的朋友了,可以访
+问Point类的私有成员变量x和y了。
+
+示例：
+//将Line类的成员函数dis()作为Point类的友元函数
+#include <cmath>			//使用计算平方根的函数sqrt要用到的头文件
+#include<iostream>
+#include <cmath>
+using namespace std;
+
+class Point;				//声明Point类
+
+class Line					//定义Line类
+{
+public:
+	float dis(Point& p1, Point& p2); //友元函数的原型，作为Line类的成员函数
+};
+
+class Point					//定义Point类
+{
+private:
+	int x,y;				//private型数据成员x和y
+	friend float Line::dis(Point &p1, Point &p2);	//友元的声明
+
+public:
+	Point(int i = 0, int j = 0)	//Point类的构造函数，带缺省参数
+	{
+		x = i;
+		y = j;
+	}
+
+	void disp()				//成员函数disp()，用来输出点的信息
+	{
+		cout << "(" << x << "," << y << ")";
+	}
+};
+
+//Line类内成员函数dis的实现，作为Point类的友元函数
+float Line::dis(Point &p1, Point &p2)
+{
+	float d = sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+	//可访问Point类对象的private成员
+
+	return d;
+}
+
+int main()
+{
+	Line line1;					//声明一个Line类的对象line1
+	Point p1(1,2), p2(4,5);		//声明两个Point类的对象p1和p2
+
+	p1.disp();					//输出点p1的信息 
+	cout << " 与 "; 
+	p2.disp();					//输出点p2的信息
+
+	cout << " 的距离 = " << line1.dis(p1, p2) << endl;
+	//通过调用line1的成员函数dis计算两个点间的距离
+
+	return 0;
+}
+	上述代码中，Line类的成员函数dis(…)的实现必须在类外
+进行，且必须在Point类的定义之后。因为其参数中包含了
+Point这种类型。
+---------------------------------------------------------------------------
+4.3 友元函数的重载
+
+	要想使得一组重载函数全部成为类的友元，必须一一声明，
+否则只有匹配的那个函数会成为类的友元，编译器仍将其
+他的当成普通函数来处理。
+
+class Exp
+{
+	public:
+	firendvoid test(int);
+};
+void test();
+void test(int);
+void test(double);
+
+	上述代码中，只有“void test(int)”函数是Exp类的友元函
+数，“void test()”和“void test(double)”函数都只是普通
+函数。
+
+---------------------------------------------------------------------------
+4.4 友元类
+	
+	类A作为类B的友元时，类A称为友元类。A中的所
+有成员函数都是B的友元函数，都可以访问B中的
+所有成员。
+
+	A可以在B的public部分或private部分进行声明，
+方法如下：
+		friend <类名>; //友元类类名
+		
+示例：
+//友元类
+#include <iostream>
+using namespace std;
+class B;
+
+class A{
+private:
+	int n;
+	friend B;//声明fun是类A的友元函数,那么fun就可以访问A的私有成员
+public:
+	A(){n = 10;}
+	
+	
+};
+
+A a;
+
+class B{
+public:	
+	void fun()
+	{
+		cout << a.n << endl;
+	}
+};
+
+int main()
+{
+	B b;
+	b.fun();
+	return 0;
+}
+---------------------------------------------------------------------------
+
+//友元类
+#include<iostream>
+#include <cmath>
+using namespace std;
+
+class CLine;				//声明类CLine
+
+class CPoint //定义CPoint类
+{
+private:
+	int x, y;
+	friend CLine; //友元类的声明，位置同样不受限制
+	
+public:
+	CPoint(int i = 0, int j = 0) //构造函数，带缺省参数值
+	{
+		x = i;
+		y = j;
+	}
+	
+	void disp() //成员函数，输出点的信息
+	{
+		cout << "(" << x << "," << y << ")";
+	}
+};
+
+class CLine				//类CLine的定义，其中所有的函数都是CPoint类的友元函数
+{
+public:
+	float dis(CPoint& p1,CPoint& p2)		//可访问p1和p2的private成员
+	{
+		float d;
+		d=sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
+		return d;
+	}
+
+	void Set(CPoint* p1,int a,int b)		//可访问p1和p2的private成员
+	{
+		p1->x=a;
+		p1->y=b;
+	}
+};
+
+int main()
+{
+	CLine cz1;					//声明一个CLine类的对象cz1
+	CPoint p1(1,2),p2(4,5);	//声明两个CPoint类对象p1和p2
+
+	p1.disp();				//输出点p1的信息 
+	cout<<"与";
+	p2.disp();				//输出点p2的信息
+	cout<<"距离="<<cz1.dis(p1,p2)<<endl;//调用cz1的成员函数dis计算两点间距
+
+	cz1.Set(&p1,3,4);		//调用cz1的成员函数Set改写p1中的private成员x和y
+	p1.disp();				//修改后的点p1信息输出
+
+	cout<<endl;				//换行
+
+	return 0;
+}
+---------------------------------------------------------------------------
+//友元类
+#include <iostream>
+using namespace std;
+class B;
+
+class A{
+private:
+	int n;
+	friend B;//声明fun是类A的友元函数,那么fun就可以访问A的私有成员
+public:
+	A(){n = 10;}
+	
+	
+};
+
+A a;
+
+class B{
+public:	
+	void fun()
+	{
+		cout << a.n << endl;
+	}
+};
+
+int main()
+{
+	B b;
+	b.fun();
+	return 0;
+}
+
+---------------------------------------------------------------------------
+4.5 友元是否破坏了封装性
+
+	不可否认，友元在一定程度上将类的私有成员暴
+露出来，破坏了信息隐藏机制，似乎是种“副作用
+很大的药”，但俗话说“良药苦口”，好工具总是要
+付出点代价的，拿把锋利的刀砍瓜切菜，总是要
+注意不要割到手指的。
+
+	友元的存在，使得类的接口扩展更为灵活，使用
+友元进行运算符重载从概念上也更容易理解一些，
+而且，C++规则已经极力地将友元的使用限制在了
+一定范围内，它是单向的、不具备传递性、不能
+被继承，所以，应尽量合理使用友元。
+	
+---------------------------------------------------------------------------
+5. 运算符重载
+
+	首先来看一个问题：备注代码定义了一个复数类
+complex，然后用complex定义了2个复数，如何实
+现这2个复数的加法呢？
+
+//运算符重载的必要性
+#include <iostream>
+using namespace std;
+
+class complex					//定义复数类 complex
+{
+private:
+	double real, imag;			//private 成员，分别代表实部和虚部
+
+public:
+	complex(double r = 0.0, double i = 0.0)	//构造函数，带缺省参数值
+	{
+		real = r;
+		imag = i;
+	}
+
+	void disp()								//成员函数，输出复数
+	{
+		cout << real << " + " << "i*" << imag << endl;
+	}
+};
+
+int main()
+{
+	complex cx1(1.0, 2.0);
+	complex cx2(3.0, 4.0);
+	complex cxRes = cx1 + cx2;	//错误，因为point是自定义的数据类型，系统并未定义对这种自定义数据类型的加法操作
+	cxRes.disp();
+	return 0;
+}
+
+	这个问题的解决就需要用到运算符重载的知识，
+下面详细讲解。
+---------------------------------------------------------------------------
+5.1 运算符重载规则
+
+	运算符是一种通俗、直观的函数，比如：intx＝2+3;语句中的“＋”操作符，系统
+本身就提供了很多个重载版本：
+		intoperator + (int，int);
+		double operator + (double,double);
+
+可以重载的运算符有：
+	双目运算符+ -  */ %
+	关系运算符== != < > <= >=
+	逻辑运算符|| && +
+	单目运算符+ -  *&
+	自增自减运算符++ --位运算符| & ~ ^ << >>
+	赋值运算符= += -=  *= /= %= &= |= ^= <<= >>=
+	空间申请和释放new delete new[] delete[]
+	其他运算符() -> ->*, []
+	
+不能重载的运算符有：
+	成员访问符.
+	成员指针访问运算符.*
+	域运算符::
+	长度运算符sizeof
+	条件运算符号?:
+	
+不能臆造并重载一个不存在的运算符，如@, #，$等。
+
+---------------------------------------------------------------------------
+5.2 以成员函数形式重载运算符
+
+	成员函数形式的运算符声明和实现与成员函数类似，首先
+应当在类定义中声明该运算符，声明的具体形式为：
+		返回类型  operator 运算符（参数列表）;
+
+	既可以在类定义的同时定义运算符函数使其成为inline型，
+也可以在类定义之外定义运算符函数，但要使用作用域限
+定符“::”，类外定义的基本格式为：
+返回类型  类名::operator 运算符（参数列表）
+{
+	…
+}
+---------------------------------------------------------------------------
+示例：
+//成员函数形式 的 运算符重载
+#include <iostream>
+using namespace std;
+
+class complex					//定义复数类 complex
+{
+private:
+	double real, imag;			//private 成员，分别代表实部和虚部
+
+public:
+	complex(double r = 0.0, double i = 0.0)	//构造函数，带缺省参数值
+	{
+		real = r;
+		imag = i;
+	}
+
+	complex operator+= (const complex &);	//成员函数形式重载加+=
+
+	complex operator+(const complex &);	//成员函数形式重载加+
+	complex operator-(const complex &);	//成员函数形式重载减－
+	complex operator-();					//成员函数形式重载一元－（取反）
+	complex operator*(const complex &);	//成员函数形式重载乘*
+	complex operator/(const complex &);	//成员函数形式重载除*
+
+	complex& operator++();					//成员函数形式重载前置++
+	complex operator++(int);				//成员函数形式重载后置++
+
+	void disp()								//成员函数，输出复数
+	{
+		cout << real << " + " << "i*" << imag << endl;
+	}
+};
+
+complex complex::operator+=(const complex& CC)		//加+=的实现
+{
+	real += CC.real;
+	imag += CC.imag;
+	return (*this);
+}
+
+complex complex::operator+(const complex& CC)		//加+的实现
+{
+	return complex(real + CC.real, imag + CC.imag);
+}
+
+complex complex::operator-(const complex& CC)		//减-的实现
+{
+	return complex(real - CC.real, imag - CC.imag);
+}
+
+complex complex::operator*(const complex& CC)		//乘*的实现
+{
+	return complex(real * CC.real - imag * CC.imag, real * CC.imag + imag * CC.real);
+}
+
+complex complex::operator/(const complex& CC)		//除/的实现
+{
+	return complex((real * CC.real + imag + CC.imag) / (CC.real * CC.real + CC.imag * CC.imag),
+		(imag * CC.real - real * CC.imag) / (CC.real * CC.real + CC.imag * CC.imag));
+}
+
+complex complex::operator-()						//单目-，即取反的实现
+{
+	return complex(-real, -imag);
+}
+
+complex& complex::operator++()						//前置++的实现
+{
+	cout << "前置++" << endl;
+	++real;
+	++imag;
+	return (*this);
+}
+
+complex complex::operator++(int)					//后置++的实现，体会和前置++的区别	这里不能返回引用，否则结果为乱码，读者可以自己测试，并思考为什么这样。 {
+	cout << "后置++" << endl;
+	complex cTemp = (*this);	//最终的返回值的是原来的值，因此需要先保存原来的值
+	++(*this);				//返回后原来的值需要加1
+	return cTemp;
+}
+
+int main()
+{
+	complex cx1(1.0, 2.0), cx2(3.0, 4.0), cxRes;
+
+	cxRes += cx2;		//相当于cxRes.operator+=(cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 + cx2;	//相当于cx1.operator+(cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 - cx2;	//相当于cx1.operator-(cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 * cx2;	//相当于cx1.operator*(cx2)
+	cxRes.disp();
+	
+	cxRes = cx1 / cx2;	//相当于cx1.operator/(cx2)
+	cxRes.disp();
+	
+	cxRes = -cx1;		//相当于cx1.operator-()
+	cxRes.disp();
+	
+	cout << endl;
+	
+	complex cx3(1.0, 1.0), cx4(5.0, 5.0);
+	
+	cxRes = ++cx3;		//相当于cx3.operator++()
+	cxRes.disp();
+	cx3.disp();
+
+	cout << endl;
+	
+	cxRes = cx4++;		//相当于cx4.operator++(0)
+	cxRes.disp();
+	cx4.disp();
+
+	cout << endl;
+	
+	//注意下述语句在友元函数形式和成员函数形式中的对比。
+	cxRes = cx1 + 5;	//相当于cx1.operator+(5) 或 cx1.operator+(complex(5))
+	cxRes.disp();
+
+//	cxRes = 5 + cx1;	//错误. 相当于5.operator+(cx1);
+//	cxRes.disp();
+
+	return 0;
+}
+
+---------------------------------------------------------------------------
+小结
+---------------------------------------------------------------------------
+作业
+---------------------------------------------------------------------------

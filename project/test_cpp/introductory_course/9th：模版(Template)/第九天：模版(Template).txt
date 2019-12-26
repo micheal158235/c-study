@@ -1,0 +1,972 @@
+
+第九天：模版(template)
+
+1. 为什么要定义模版
+	1.1 类型参数化
+	1.2 模版的定义
+2. 函数模版
+	2.1 函数模版的使用
+	2.2 隐式实例化
+	2.3 显示实例化
+	2.4 特化
+	2.5 重载
+	2.6 优先级与执行顺序
+3. 类模版
+	3.1 定义类模版
+	3.2 隐式实例化
+	3.3 显示实例化
+	3.4 显示特化
+	3.5 部分特化
+	3.6 重载和优先级
+4. 模版的嵌套
+	4.1 函数成员模版
+	4.2 对象成员模版
+5. 模版做参数
+6. 小结
+
+--------------------------------------------------------------------
+模版(template)
+
+	现在的C++编译器实现了一项新的特性：模板
+（Template），简单地说，模板是一种通用的描
+述机制，也就是说，使用模板允许使用通用类型
+来定义函数或类等，在使用时，通用类型可被具
+体的类型，如int、double甚至是用户自定义的类
+型来代替。模板引入一种全新的编程思维方式，
+称为“泛型编程”或“通用编程”。
+
+--------------------------------------------------------------------
+1. 为什么要定义模版
+
+	形象地说，把函数比喻为一个游戏过程，函数的流程就相
+当于游戏规则，在以往的函数定义中，总是指明参数是int
+型还是double型等等，这就像是为张三（好比int型）和李
+四（好比double型）比赛制定规则。可如果王五（char*型）
+和赵六（bool型）要比赛，还得提供一套函数的定义，这
+相当于又制定了一次规则，显然这是很麻烦的。模板的的
+引入解决了这一问题，不管是谁和谁比赛，都把他们定义
+成A与B比赛，制定好了A与B比赛的规则（定义了关于A和B
+的函数）后，比赛时只要把A替换成张三，把B替换成李四
+就可以了，大大简化了程序代码量，维持了结构的清晰，
+大大提高了程序设计的效率。该过程称为“类型参数化”。
+
+--------------------------------------------------------------------
+1.1 类型参数化
+在讲解类型参数化之前，先来看一个示例：
+#include <iostream>
+using namespace std;
+
+int add(int x, int y)			//定义两个int类型相加的函数
+{
+	return x + y;
+}
+
+double add(double x, double y) //重载两个double类型相加的函数
+{
+	return x + y;
+}
+
+char* add(char* px, char* py)			//重载两个字符数组相加的函数
+{
+	return strcat(px, py);				//调用库函数strcat
+}
+
+int main()
+{
+	cout << add(1, 2) << endl;			//调用add(const int,const int)
+
+	cout << add(3.0, 4.0) << endl;		//调用add(const double,const double)
+
+	char x[10] = "Hello ";				//创建字符数组，注意要留够大小
+	char y[] = "C++";
+	cout << add(x, y) << endl;			//调用add(char*,char*)
+
+	return 0;
+}
+
+--------------------------------------------------------------------
+1.2 模版的定义
+
+	模板的引入使得函数定义摆脱了类型的束缚，代码更为高
+效灵活。C＋＋中，通过下述形式定义一个模板：
+	template <class T>
+或
+	template<typenameT>
+
+	早期模板定义使用的是class，关键字typename是最近才加
+入到标准中的，相比class，typename更容易体现“类型”的
+观点，虽然两个关键字在模板定义时是等价的，但从代码
+兼容的角度讲，使用class较好一些。
+
+	模板有函数模板和类模板之分，之后将分别进行介绍。
+--------------------------------------------------------------------
+示例：
+//模板
+#include <iostream>
+#include <string>					//使用标准类库中提供的string类时必须包含此头文件
+using namespace std;
+
+template <typename T>
+T add(const T &a, const T &b)
+{
+	return a + b;
+}
+
+int main()
+{
+	cout << add(10, 20) << endl;	//调用add(const int,const int)
+	cout << add(1.0, 2.0) << endl;	//调用add(const double,const double)
+	string x("Hello,"), y("world");
+	cout << add(x, y) << endl;		//调用add(string,string)
+
+	return 0;
+}
+
+--------------------------------------------------------------------
+2. 函数模版
+
+	上述代码中的add函数便是一个函数模板，编译器根据函数模板的定义，检查传入的
+参数类型，生成相应的函数，并调用之。函数模板的定义形式如下：
+template <模板参数表>
+返回类型 函数名（参数列表）
+{
+//函数体
+}
+
+	关键字template放在模板的定义与声明的最前面，其后是用逗号分隔的模板参数表，
+用尖括号（<>）括起来。模板参数表不能为空，模板参数有两种类型：
+– class或typename修饰的类型参数，代表某种类型；
+– 非类型参数，使用已知类型符，代表一个常量表达式。
+
+	返回类型和函数的参数列表中可以包含类型参数，在函数中可以使用模板参数表中的
+常量表达式，如：
+template <class T1,class T2,int number>
+double fun(T1 a,intb,T2 c)
+{
+	//函数体，其中number可以作为一个int型常量来使用
+}
+
+--------------------------------------------------------------------
+2.1 函数模版的使用
+
+	函数模板的使用规则和普通函数是相同的，在使
+用函数模板之前，必须对函数模板进行声明，此
+声明必须在外部进行，也就是说不能在任何一个
+函数（包括main函数）中声明，声明的格式为：
+template <class T1[，class T2，……]>
+函数原型
+
+	和普通函数一样，如果在使用函数模板前对函数
+模板进行了定义，函数模板的声明可以省略。
+
+--------------------------------------------------------------------
+2.2 隐式实例化
+
+	函数模板实际上不是个完整的函数定义，因为其
+中的类型参数还不确定，只是定义了某些类型的
+角色（或变量）在函数中的操作形式，因此，必
+须将模板参数实例化才能使用函数，用模板实例
+化后的函数也称为模板函数，最简单的实例化是
+“隐式实例化”（implicit instantiation）。
+
+示例：
+//函数模版的隐式实例化
+#include <iostream>
+using namespace std;
+
+template <class T>
+T Max(T x, T y);	//函数模版的声明
+
+int main()
+{
+	int intX = 1, intY = 2;
+	double dblX = 3.9, dblY = 2.9;
+	cout << Max(intX, intY) << endl;	//实参为int型，生成int型模板函数，并对第二个参数进行检查
+	cout << Max(dblX, dblY) << endl;	//实参为double型，生成double型模板函数，并对第二个参数进行检查
+
+	return 0;
+}
+
+template <class T>
+T Max(T x, T y)		//函数模版的实现
+{
+	return (x > y ? x : y);
+}
+
+--------------------------------------------------------------------
+2.3 显示实例化
+
+	早期的编译器只支持隐式实例化，新的C++标准允
+许显式实例化（explicit instantiation），由
+程序员直接命令编译器创建满足条件的模板函数，
+用以解决因重载等引入的二义性问题。
+
+	显式实例化的标准格式为：
+template 返回类型 函数名<类型实参表>(函数参数表);
+template int Max<int>(inta, intb);
+
+	最前面的关键字template说明这是对函数模板的
+实例化，类型实参被显式指定在逗号分隔的列表
+中，用尖括号<>括起来，紧跟在函数名的后面。
+
+示例：
+//显式实例化函数模版
+#include <iostream>
+using namespace std;
+
+template < class T >
+T Max(T x, T y);
+
+template
+int Max<int>(int x, int y); //显式实例化int类型的Max函数模板
+
+int main()
+{
+	int intX = 1, intY = 2;
+	double dblX = 3.0, dblY = 2.9;
+	
+	cout << Max(intX, intY) << endl;			//调用实例化的Max(int,int)
+	cout << Max<double>(dblX, dblY) << endl;	//实参为double型，生成double型模板函数，并对第二个参数进行检查
+
+	cout << Max('A', '8') << endl;				//隐式实例化char型，生成char型模板函数，并对第二个参数进行检查
+
+	return 0;
+}
+
+template <class T>
+T Max(T x, T y)
+{
+	return x > y ? x : y;
+}
+
+--------------------------------------------------------------------
+2.4 特化
+
+	C++引入了特化（explicit specialization）来解决某些类型在
+函数中的特殊操作，当编译器寻找到与函数调用的特化时，先使
+用特化的定义，不再使用模板函数。
+
+	特化的基本格式为：
+template <>
+返回类型 函数名[<类型实参表>](函数参数表)
+{
+	//函数体定义
+}
+如：
+template <> 
+double max<double>(double a, double b){return a + b;}
+
+类型实参表可以省略，由后续的函数参数表来指定。
+template <> 
+double max(double a, double b){return a + b;}
+
+	显式实例化的意思是“使用模板生成某些类型参数的模板函数”，
+而特化的意思是“不使用模板生成函数定义，而是单独为某些类型
+参数生成函数定义”，这就是为什么特化有函数体的原因。
+--------------------------------------------------------------------
+示例：
+//特化
+#include <iostream>
+#include <string>
+using namespace std;
+
+template <class T>
+T Add(T x, T y);
+
+template <>
+char *Add(char *, char *); //特化声明
+
+int main()
+{
+	int intX = 1, intY = 2;
+	double dblX = 3.0, dblY = 2.9;
+	char szx[] = "Hello, ", szy[] = "world!";
+	string sx(szx), sy(szy);
+
+	cout << Add(intX, intY) << endl;			//隐式实例化 int
+	cout << Add<double>(dblX, dblY) << endl;	//显式实例化 double
+
+	cout << Add(sx, sy) << endl;				//隐式实例化 string
+	cout << Add(szx, szy) << endl;				//优先调用特化函数 char *
+
+	cout << Add<string>("Hello, ", "world!") << endl;	//显式实例化 string
+	cout << Add<char *>("Hello, ", "world!") << endl;	//优先调用特化函数 char *
+												//如果把特化函数注释掉，会编译出错.
+	return 0;
+}
+
+template <class T>
+T Add(T x, T y)
+{
+	return x + y;
+}
+
+template <>
+char *Add(char *x, char *y)	//char * 特化定义, 因为原定义不适合char *类型
+{
+	char *z = new char[strlen(x) + strlen(y) + 1];
+	strcpy(z, x);
+	strcat(z, y);
+	return z;
+}
+
+--------------------------------------------------------------------
+2.5 重载
+
+	函数模板支持重载，既可以模板之间重载（同名模板），也可以实现模板
+和普通函数间的重载，但模板的重载相比普通函数的重载要复杂一点，首
+先看一个例子：
+template <class T1,class T2>
+T1 Max(T1 a,T2,b){……}
+	与
+template <class T3,class T4>
+T3 Max(T3 c,T4,d){……}
+
+	看似不同的两个模板，仔细分析后发现，其本质是一样的，如果调用
+“Max(2,3.5);”，都实例化为“Max(int,double);”，会出现重复定义的错误。
+
+	仅仅依靠返回值不同的模板重载也是不合法的，如：
+		template <class T1,class T2>
+		T1 Greater(T1 a,T2,b){……}
+				与
+		template <class T3,class T4>
+		T3*Greater(T3 c,T4,d){……}
+
+--------------------------------------------------------------------
+2.6 优先级与执行顺序
+
+	总体来说，一般函数的执行优先于模板的特化函
+数，模板的特化函数优先于实例化函数。
+
+示例：
+#include <iostream>
+using namespace std;
+//模版实例化后生成一个具体的函数
+/*这是一个函数模版，T是该函数模版的参数，T的值可以是int,float,double...*/
+template <typename T>
+void add(T a)
+{
+	cout<<"模版1"<<endl;
+}
+
+template <> 
+void add<double>(double a)
+{
+	cout<<"double特化函数\n";
+}
+
+void add(double a)
+{
+	cout<<"double普通函数\n";
+}
+int main()
+{
+	add(3.5);
+	return 0;
+}
+
+--------------------------------------------------------------------
+3. 类模版
+
+	模板同样可以用在类场合中，提供通用型的类定
+义。C++标准库中提供了很多模板类，下一章中要
+讨论的C++标准模板库STL，其基础便是模板，本
+节来介绍类模板的基础知识。
+
+--------------------------------------------------------------------
+3.1 定义类模版
+
+	理解了函数模板的应用，类模板的提出似乎是水到渠成的事。
+	我们先编写一个普通的处理int类型数据的栈类StackA，然后
+将其改造成模版类：
+//普通类-->模版类
+#include <iostream>
+using namespace std;
+/*普通栈类：局限性为只能保存int型的数据*/
+class Stack{
+private:
+	int point;
+	int size;
+	int * sz;
+	
+public:
+	Stack(int n = 10)
+	{
+		point = 0;
+		size = n;
+		sz = new int[size];
+	}
+	~Stack()
+	{
+		delete []sz;
+	}
+	bool isEmpty() {return point == 0;}
+	bool isFull() {return point == size;}
+	int & GetPos() {return point;}
+	bool push(const int & obj)//入栈
+	{
+		if (isFull())
+			return false;
+		else
+		{
+			sz[point++] = obj;
+			return true;
+		}
+	}
+	bool pop(int & obj)//入栈
+	{
+		if (isEmpty())
+			return false;
+		else
+		{
+			obj = sz[--point];
+			return true;
+		}
+	}
+};
+/*模版栈类：很通用，可以保存任何类型的数据*/
+template < class T, int n >
+class StackA
+{
+private:
+	int point;
+	int size;
+	T * sz;
+	
+public:
+	StackA()
+	{
+		point = 0;
+		size = n;
+		sz = new T[size];
+	}
+	~StackA()
+	{
+		delete []sz;
+	}
+	bool isEmpty() {return point == 0;}
+	bool isFull() {return point == size;}
+	int & GetPos() {return point;}
+	bool push(const T & obj)//入栈
+	{
+		if (isFull())
+			return false;
+		else
+		{
+			sz[point++] = obj;
+			return true;
+		}
+	}
+	bool pop(T & obj)//入栈
+	{
+		if (isEmpty())
+			return false;
+		else
+		{
+			obj = sz[--point];
+			return true;
+		}
+	}
+};
+///*以下是模板类的成员函数在类定义外实现*/
+//template < class T, int n >
+//bool StackA<T, n>::push(const T & obj)
+//{
+//	if (isFull())
+//		return false;
+//	else
+//	{
+//		sz[point++] = obj;
+//		return true;
+//	}
+//}
+//
+//template < class T, int n >
+//bool StackA<T, n>::pop(T & obj)
+//{
+//	if (isEmpty())
+//		return false;
+//	else
+//	{
+//		obj = sz[--point];
+//		return true;
+//	}
+//}
+
+int main()
+{
+	StackA < int, 10 > st; //模版类, 模版参数为<class T, int num>
+	cout << "开始时st是否为空？ " << st.isEmpty() << endl;
+	
+	st.push(5); //压入元素5
+	cout << "此时st是否为空？ " << st.isEmpty() << endl;
+	
+	for (int i = 1; i < 10; i++)
+	{
+		st.push(i); //压入9个元素
+	}
+	cout << "此时st是否已满？" << st.isFull() << endl;
+	
+	int rec = 0;
+	while (st.pop(rec))
+		cout << rec << "  ";
+	cout << endl;
+	
+	return 0;
+}
+
+	上述代码相对完整地实现了一个栈类Stack，列出了类模板
+和成员函数模板。模板的引入使得类的定义更为灵活，可以
+在类创建时指明其中的元素类型T，以及非类型常量num的大
+小，需要注意的是，不管是类定义还是成员函数定义，都要
+遵守模板的定义形式。
+
+	注意，类模板和成员函数模板不是传统意义上的类定义和成
+员函数定义，他们是C++编译指令，用以向编译器说明如何生
+成类定义和成员函数定义。
+	“Stack<int,10> st;”生成对象的操作称为实例化
+（instantiation）或具体化（specialization）。
+
+--------------------------------------------------------------------
+3.2 隐式实例化
+
+	之前一节的代码中使用下述语句创建了Stack类模板的对
+象：
+	Stack<int,10> st;
+	
+	这是隐式实例化（implicit instantiation），
+编译器根据要求，隐式地生成类定义，但应当注
+意，下述语句不需要创建对象，编译器不会隐式
+生成类定义：
+	Stack<int,10> *pS;
+
+--------------------------------------------------------------------
+3.3 显示实例化
+
+	和根据函数模板生成模板函数的过程类似，显式
+实例化（explicit instantiation）的基本格式
+为：
+	template class 类名<类型参数表>;如
+	template calssStack<int,10>;
+	
+	上述代码将Stack<int,10>声明为一个类，此时，
+虽未创建类对象，但编译器已经显式生成了类定
+义。
+
+--------------------------------------------------------------------
+3.4 显示特化
+
+	不论是隐式实例化还是显式实例化，都是使用模板来生成
+类定义，而特化是特定类型（用于替换模板中的通用类型）
+的定义，抛开了模板而使用独立、专门的类定义。
+
+	显式特化（explicit specialization）也称完全特化，其
+基本格式为：
+	template<> class 类名<特殊类型>
+	{
+		//类定义
+	}
+	如果对某个特殊类型进行了显式特化处理，显式特化定义
+的类优先于通用模板类，类似于覆盖或隐藏的操作。
+--------------------------------------------------------------------
+示例：
+//显式特化(完全特化)
+#include <iostream>
+#include "Stack.h"
+using namespace std;
+
+template <>
+class Stack<double,5>			//显式特化(完全特化)
+{
+	private:
+		double sz[5];			//存储空间，用数组表示,此处的5个元素和显式具体化中的5无关
+		int point;				//指针，表示存储位置（即元素个数）
+	public:
+		Stack();				//构造函数
+		bool isNotEmpty();		//判断栈是否为空
+};
+
+Stack<double,5>::Stack()
+{
+	point=0;					//初始位置为0，栈底
+}
+
+bool Stack<double,5>::isNotEmpty()
+{
+	return point!=0;			//point为0，说明当前无元素
+}
+
+int main()
+{
+	Stack<double,5> st;			//调用显式具体化生成的类定义
+	cout << "此时st是否非空？" << st.isNotEmpty() << endl;
+	//cout << st.isFull() << endl;	//错误, 因为isFull()并没有在特化类中定义
+	
+	return 0;
+}
+
+--------------------------------------------------------------------
+3.5 部分特化
+
+	C++引入了部分特化（partial specialization）来部分地限制类
+模板的通用型，例如中可使用下述方式对类定义特化：
+	template <> class Stack<double,intnum>
+	
+	只限制了前一个类型参数为double，对第二个int型常量没有限制，
+这个例子有些特殊，来看一个一般些的例子：
+
+通用类模板：
+template<class T1,class T2> class Example
+{
+	//类定义
+};
+
+部分特化定义：
+template<class T2> class Example<int,T2>
+{
+	//类定义
+}
+
+	如果所有类型都已指定，那么template后的<>内为空，这就是显
+示特化(完全特化)。
+--------------------------------------------------------------------
+示例：
+#include <iostream>
+using namespace std;
+/*定义了一个类模版：模版名字是A。类模版实例化之后是一个类。
+然后才能定义这个类的对象*/
+template <typename T1, typename T2>
+class A
+{
+public:
+	T1 n;
+	T2 m;
+	A(T1 nn = 0, T2 mm = 0)
+	{
+		n = nn, m = mm;
+	}
+
+	void disp()
+	{
+		cout<<"类模版\n";
+		cout<<"n = "<<n<<endl;
+		cout<<"m = "<<m<<endl;
+	}
+};
+
+/*template<class T2>
+ class Example<int,T2>
+{
+	//类定义
+}*/
+/*部分特化*/
+template <class T2>
+class A<int, T2>
+{
+public:
+	double n;
+	T2 m;
+	A(double nn = 0, T2 mm = 0)
+	{
+		n = nn, m = mm;
+	}
+
+	void disp()
+	{
+		cout<<"部分特化\n";
+		cout<<"n = "<<n<<endl;
+		cout<<"m = "<<m<<endl;
+	}
+};
+
+template <>
+class A<double, int>
+{
+public:
+	T1 n;
+	T2 m;
+	A(T1 nn = 0, T2 mm = 0)
+	{
+		n = nn, m = mm;
+	}
+
+	void disp()
+	{
+		cout<<"完全特化\n";
+		cout<<"n = "<<n<<endl;
+		cout<<"m = "<<m<<endl;
+	}
+};
+int main()
+{
+	A<double, int>a(1.4, 4);//隐式实例化，模版类
+	a.disp();
+	return 0;
+}
+
+--------------------------------------------------------------------
+3.6 重载和优先级
+
+如果有多个模板供选择，编译器将选择特化程度最高的一个，如：
+	template<class T1,class T2> class Example{};//通用类模板
+	template<class T2> class Example<int,T2>{}; //部分特化
+	template<> class Example<int,int>{}; //显式特化
+	
+创建不同类的对象时，不同的模板被调用，如下所示：
+	Example<double, double> E1; //调用通用模板
+	Example<int, float> E2; //调用部分特化
+	Example<int, int> E3; //调用显示特化
+	
+部分特化有两个应用：
+– 为指针提供特殊版本的模板
+		->template <class T> class Stack{} //#1一般类型
+		->template <class T*> class Stack{} //#2指针类型
+– 为类模板的调用设置各种限制
+– template <class T1,class T2> class Stack{} //2
+个类型参数不同时调用
+		->template <class T1> class Stack<T1,T1>{} //2个类型参数
+	相同时调用
+
+--------------------------------------------------------------------
+4. 模版的嵌套
+
+	模板的套嵌可以理解成在另外一个模板里面定义
+一个模板。以模板（类，或者函数）作为另一个
+模板（类，或者函数）的成员，也称成员模板。
+
+	成员模版是不能声明为virtual的。
+
+--------------------------------------------------------------------
+4.1 函数成员模版
+	
+	可以将函数模板作为另一个类（必须是模板类）
+的成员，称为函数成员模板，其用法和普通成员
+函数类似。
+
+示例：
+//嵌套模版函数的模版类
+#include <iostream>
+using namespace std;
+
+//普通模版类
+template <typename T1, typename T2>
+class Convert
+{
+public:
+	T2 f(T1 data)
+	{
+		return T2(data);
+	}
+};
+
+
+//嵌套了模版函数的模版类
+template< typename T1>
+class Test						//Test模版类定义
+{
+public:
+    template< typename T2>
+	T1 f(T2 b)				//模板成员函数定义
+	{
+	    return T1(b);			//将b由T2类型强制转换成T1类型
+	}
+};
+
+//如下在类外实现f()函数的方法在VC6中编译不能通过, VC2008中可以。
+//template<typename T1>
+//template<typename T2>
+//T1 Test<T1>::f(T2 b)			//模板成员函数的实现
+//{
+//        return T1(b);			//将b由T2类型强制转换成T1类型
+//}
+
+int main()
+{
+	//普通模版类的使用
+	Convert<char, int> c1;
+	cout << c1.f('A') << endl;
+
+	Convert<float, int> c2;
+	cout << c2.f(9.85f) << endl;
+
+	Convert<int, short> c3;
+	cout << hex << showbase << c3.f(0x7fffffff) << endl << dec;
+	//通过上述3个例子，发现有些不太人性化, 必须指明第一个模版参数
+	//其实这个参数就是函数f的参数，没必要指定。
+	//这可以使用嵌套模版函数的模版类来解决。见Test类的实现。
+
+
+	//嵌套模版类的使用
+	Test<int> t;
+	cout<<t.f(3.14f)<<endl;
+
+	getchar();
+	return 0;
+}
+
+--------------------------------------------------------------------
+4.2 对象成员模版
+
+	类模板的定义可以放在另一个类中，实例化后的
+模板类对象可以作为另一个类的成员。
+
+示例：
+//嵌套模版类的模版类
+#include <iostream>
+using namespace std;
+
+template< typename T>
+class Outside					//外部Outside类定义
+{
+public:
+	template < typename R>
+	class Inside				//嵌套类模板定义
+	{
+	private:
+		R r;
+	public:
+		Inside(R x)				//模板类的成员函数可以在定义时实现
+		{
+			r=x;
+		}
+		//void disp();
+		void disp()
+		{
+			cout << "Inside: r:" << r;
+			cout << ",R:" << typeid(R).name()<<endl;
+		}
+	};
+
+	Outside(T x) : t(x)			//Outside类的构造函数
+	{}
+	
+	//void disp();
+	void disp()
+	{
+		cout<<"Outside:";
+		cout<<"T:"<<typeid(T).name()<<endl;
+		t.disp();
+	}
+
+private:
+	Inside<T> t;
+};
+
+//template< typename T>
+//template< typename R>
+//void Outside<T>::Inside<R>::disp()	//模板类的成员函数也可以在定义外实现
+//{			//但必须是在所有类定义的外边,不能放在Outside内Inside外去实现.
+//	cout<<"Inside: "<<Outside<T>::Inside<R>::r<<endl;
+//}
+
+//template< typename T>
+//void Outside<T>::disp()
+//{
+//	cout<<"Outside:";
+//	t.disp();
+//}
+
+int main()
+{
+	Outside<int>::Inside<double> obin(3.5);	//声明Inside类对象obin
+	obin.disp();
+
+	Outside<int> obout(2);					//创建Outside类对象obout
+	obout.disp();
+
+	return 0;
+}
+
+	代码中，理解的难点在于“类模板不等于类
+定义，需要实例化或特化来生成类实例”。上述代
+码中，Inside类模板的访问权限为public，因此，
+可以调用下述语句：
+	“Outside<int>::Inside<double> obin(3.5);”
+	
+	在Outside类内使用“Inside<T> t;”语句声明了
+Inside<T>类的对象，在Outside模板类对象创建
+时，首先采用隐式实例化先生成Inside<T>类的定
+义，而后根据此定义创建对象成员t。
+
+--------------------------------------------------------------------
+5. 模版做参数
+
+	模板包含类型参数（如class Type）和非类型参数（如int
+NUM，NUM是常量），实际上，模板的参数可以是另一个模板，
+也就是说，下述形式是合法的：
+template<template <typenameT1> class temName, 
+			class T3,int Num>;
+
+	上述简单示例将原来简单的“class T2”或“TypenameT2”扩充
+为“template <class T1> class temName”
+--------------------------------------------------------------------
+真实示例：
+//A模板做为B模板的参数
+//以下代码在VS2008中可以编译通过, VC6中不行.
+//文件“Stack.h”的内容如下
+template <typename T,int num>		//类型参数表
+class Stack						//Stack类定义
+{
+	private:
+		T sz[num];				//存储空间，用数组表示
+	public:
+		int ReturnNum();		//判断栈是否为空
+};
+
+template<typename T1,int num1>		//参数列表不要求字字相同，但形式要相同
+int Stack<T1, num1>::ReturnNum()
+{
+	return num1;				//返回数组大小
+}
+
+
+#include <iostream>
+//#include "Stack.h"
+using namespace std;
+
+template<template<typename Type,int NUM> class TypeClass, typename T1, int N>
+void disp()							//函数模板，其类型参数表中包含一个类模板
+{
+	TypeClass<T1,N> ob;				//类模板的隐式实例化,创建对象ob
+	cout<<ob.ReturnNum()<<endl;		//调用ob的public成员函数
+}
+
+int main()
+{
+	disp<Stack,int,8>();/*相当抽象。函数模版的类型参数是一个类模版，
+	参数名为TypeClass，调用时穿给 TypeClass的值为Stack。首先把
+	函数模版实例化为具体的函数，然后在函数中把传入的类模版Stack
+	隐式实例化为一个具体的类，再创建一个该类的对象ob，然后对象ob
+	调用该类的ReturnNum方法*/
+
+	return 0;
+}
+
+	上述代码中定义了函数模板disp()，该模板的类型参数表中
+又包含了一个类模板TypeClass，在函数模板disp内可以对类
+TypeClass进行实例化处理。
+
+--------------------------------------------------------------------
+6. 小结
+
+1. 模板是C++引入的新特性，也是下章要介绍的标准
+模板库STL的基础，模板有函数模板和类模板之分，
+两种应用有很多相似之处。学习模板，最重要的
+是理解模板定义（函数模板定义、类模板定义）
+与具体定义（函数定义和类定义）的不同，模板
+不是定义，要通过实例化（通过模板）或特化
+（避开模板）来生成具体的函数或类定义，再调
+用函数或创建类的对象。
+
+2. 模板支持嵌套，这就是说可以在一个模板里面定
+义另一个模板。以模板（类，或者函数）作为另
+一个模板（类，或者函数）的成员，也称成员模
+板。同时，模板也可以作为另一个模板的参数，
+出现在类型参数表中。
+
+--------------------------------------------------------------------
+	
+
+
+
+
