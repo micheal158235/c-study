@@ -155,5 +155,4 @@ namespace QX{
 	}
 
 }
-#endif
 
