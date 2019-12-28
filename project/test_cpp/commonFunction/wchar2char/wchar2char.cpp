@@ -28,19 +28,19 @@ wchar_t *字符串和char *字符串的集中互转方法有如下几种方法
 //---------------------------方法四----------------------------//
 #include<iostream>
 #include<stdlib.h>
-#include<string>
 #include<locale.h>
+#include<string.h>
+
+#include "wchar2char.hpp"
 
 namespace QX{
-	using namespace std;
-	 
-	/**
-	* 将宽字符串转换成普通字符串
-	*/
-	string wstr2str(const wstring& ws)
+	/********************************************/
+	/* 将宽字符串转换成普通字符串               */
+	/********************************************/
+	std::string Wstr2str(const std::wstring& ws)
 	{
 		//获取当前的locale
-		string curLocale = setlocale(LC_ALL, NULL);
+		std::string curLocale = setlocale(LC_ALL, NULL);
 		setlocale(LC_ALL, "chs");
 	 
 		const wchar_t* pws = ws.c_str();
@@ -51,7 +51,7 @@ namespace QX{
 		//wcstombs_s(&convertedChars,dest,dByteNum,wcs,_TRUNCATE)
 		size_t convertLen = 0;
 		wcstombs_s(&convertLen, pRes, bufLen, pws, _TRUNCATE);
-		string resStr = pRes;
+		std::string resStr = pRes;
 		delete [] pRes;
 	 
 		//恢复locale
@@ -60,13 +60,13 @@ namespace QX{
 		return resStr;
 	}
 	 
-	/**
-	* 将普通字符串转换成宽字符串
-	*/
-	wstring str2wstr(const string& str)
+	/********************************************/
+	/* 将普通字符串转换成宽字符串               */
+	/********************************************/
+	std::wstring Str2wstr(const std::string& str)
 	{
 		//获取当前的locale
-		string curLocale = setlocale(LC_ALL, NULL);
+		std::string curLocale = setlocale(LC_ALL, NULL);
 		setlocale(LC_ALL, "chs");
 	 
 		const char* pstr = str.c_str();
@@ -77,24 +77,33 @@ namespace QX{
 		//mbstowcs_s(&convertedChars,dest,charNum,source,_TRUNCATE);
 		size_t convertLen = 0;
 		mbstowcs_s(&convertLen, pRes, bufLen, pstr, _TRUNCATE);
-		wstring resStr = pRes;
+		std::wstring resStr = pRes;
 		delete[] pRes;
 	 
 		//恢复locale
 		setlocale(LC_ALL, curLocale.c_str());
 		return resStr;
 	}
-	 
-	void test4()
+	
+	/********************************************/
+	/*************** 测试函数 *******************/
+	/********************************************/
+	void TestWstr2str(void)
 	{
-		wstring ws = L"欢迎使用宽字符abc159";
-		string str = wstr2str(ws);
-		cout << "转换之后的字符串 = " << str << endl;
-		
+		std::wstring ws = L"欢迎使用宽字符abc159";
+		std::string str = Wstr2str(ws);
+		std::cout << "Wstr2str转换之后str=" << str << std::endl;
+	}
+	
+	/********************************************/
+	/*************** 测试函数 *******************/
+	/********************************************/
+	void TestStr2wstr(void)
+	{
 		setlocale(LC_ALL, "chs");//要想输出宽字符，必须设置这个
-		string s = "欢迎使用宽字符abc159";
-		wstring wstr = str2wstr(s);
-		wcout << wstr << endl;
+		std::string s = "欢迎使用宽字符abc159";
+		std::wstring wstr = Str2wstr(s);
+		std::wcout << "Str2wstr转换之后wstr=" <<wstr << std::endl;
 		setlocale(LC_ALL, "C");
 	}
 
@@ -102,13 +111,13 @@ namespace QX{
 
 //---------------------------方法三----------------------------//
 #if defined(WIN32)
-#include <windows>
+#include <windows.h>
 #endif
 namespace QX{
 	
-	/**
-	* 将宽字符串转换成普通字符串
-	*/
+	/********************************************/
+	/* 将宽字符串转换成普通字符串               */
+	/********************************************/
 	std::string WcharToChar(const wchar_t* wp)
 	{
 		std::string str = "";
@@ -123,9 +132,9 @@ namespace QX{
 		return str;
 	}
 	
-	/**
-	* 将普通字符串转换成宽字符串
-	*/
+	/********************************************/
+	/* 将普通字符串转换成宽字符串               */
+	/********************************************/
 	std::wstring CharToWchar(const char* c)
 	{
 		std::wstring str = L"";
@@ -140,19 +149,30 @@ namespace QX{
 		return str;
 	}
 	
-	test3()
+	/********************************************/
+	/*************** 测试函数 *******************/
+	/********************************************/
+	void TestWcharToChar(void)
 	{
 		char     chr[8];//长度为8个字节
 		wchar_t  *wchar = L"徐凯文";
 		std::string str;
-		std::wstring wstr;
 		//wchar_t to char
-		str = wcharTochar(wchar);
+		str = WcharToChar(wchar);
+		std::cout << "WcharToChar转换之后str=" << str << std::endl;
+	}
+	
+	/********************************************/
+	/*************** 测试函数 *******************/
+	/********************************************/
+	void TestCharToWchar(void)
+	{
+		char     chr[8];//长度为8个字节
+		wchar_t  *wchar = L"徐凯文";
+		std::wstring wstr;
 		//char to wchar_t
-		wstr = charTowchar(chr, wchar, sizeof(wchar_t)* 4);
-		cout << "str = " << str << endl;
-		wcout << "wstr = " << wstr << endl;
+		wstr = CharToWchar(chr);
+		std::wcout << "CharToWchar转换之后wstr=" << wstr << std::endl;
 	}
 
 }
-

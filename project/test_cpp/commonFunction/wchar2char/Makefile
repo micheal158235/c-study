@@ -15,10 +15,12 @@ CPPDEPS    := $(CPPSRCS:%.cpp=%.d)
 
 #注意：ifeq后要有空格
 ifeq ("$(platform)", "i686-pc-mingw32")
-LFLAGS := -L../../../target/lib -lliblog4cpp
+#LFLAGS := -L../../../target/lib -lliblog4cpp
+LFLAGS :=
 LLFLAGS := $(LFLAGS)
 else
-LFLAGS := -L../../../target/lib/ -lliblog4cpp
+#LFLAGS := -L../../../target/lib/ -lliblog4cpp
+LFLAGS :=
 LLFLAGS := $(LFLAGS) -shared -fpic
 endif
 
@@ -52,5 +54,5 @@ $(CPPDEPS):%.d:%.cpp
 #*sed echo $(SOURCE_DIR);rm -Rf *.o *.d;
 .PHONY:clean
 clean:
-	rm -Rf *.o
+	rm -Rf *.o *.d
 	

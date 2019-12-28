@@ -2,9 +2,12 @@
 
 int main()
 {
-	QX::test3();
+	QX::TestWstr2str();
 	system("pause");
-	QX::test4();
+	QX::TestStr2wstr();
 	system("pause");
+	QX::TestWcharToChar();
+	system("pause");
+	QX::TestCharToWchar();
 	return 0;
 }
