@@ -177,7 +177,7 @@ $(CPPOBJS):%.o:%.cpp
 	$(CPP) -o $@ -c $< $(CFLAGS) $(INCLUDEFLAGS)
 $(COBJS):%.o:%.c
 	$(CC) -o $@ -c $< $(CFLAGS) $(INCLUDEFLAGS)
-$(CPPDEPS):%d:%.cpp
+$(CPPDEPS):%.d:%.cpp
 	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDEFLAGS) > $@.$$$$
 	sed 's,\($*\).o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$

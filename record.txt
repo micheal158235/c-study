@@ -1,4 +1,4 @@
-cd C:/Users/sz_yfpub13/Desktop/qianxiao/c++/study/c-study
+﻿cd C:/Users/sz_yfpub13/Desktop/qianxiao/c++/study/c-study
 
 $ git commit -m "编写工程公共库的Makefile模板"
 [master d42b258] 编写工程公共库的Makefile模板
@@ -13,3 +13,19 @@ You can suppress this message by setting them explicitly:
 After doing this, you may fix the identity used for this commit with:
 
     git commit --amend --reset-author
+
+////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------------------------//
+     -E         -S        -o
+   预编译      汇编      编译
+.c   ->    .i   ->   .s   ->   .o -> .out/.exe
+gcc -E main.c  ->输出到控制台
+gcc -E main.c -o main.i
+gcc -S main.i -o main.s
+gcc -c main.s -o main.o
+gcc main.o -o main.exe
+gcc mian.c -o main.exe
+gcc -c main.c -o main.exe
+ar rcs libtest.a test.o
+gcc main.o libtest.a -o main.exe
