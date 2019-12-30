@@ -90,7 +90,7 @@ namespace QX{
 	/********************************************/
 	void TestWstr2str(void)
 	{
-		std::wstring ws = L"欢迎使用宽字符abc159";
+		std::wstring  ws = L"欢迎使用宽字符abc159";
 		std::string str = Wstr2str(ws);
 		std::cout << "Wstr2str转换之后str=" << str << std::endl;
 	}
@@ -154,10 +154,9 @@ namespace QX{
 	/********************************************/
 	void TestWcharToChar(void)
 	{
-		char     chr[8];//长度为8个字节
-		wchar_t  *wchar = L"徐凯文";
+		wchar_t *wchar = (wchar_t *)L"徐凯文";
+		//或者这样写gcc才不会报warning信息：wchar_t const *wchar = L"徐凯文";
 		std::string str;
-		//wchar_t to char
 		str = WcharToChar(wchar);
 		std::cout << "WcharToChar转换之后str=" << str << std::endl;
 	}
@@ -168,9 +167,8 @@ namespace QX{
 	void TestCharToWchar(void)
 	{
 		char     chr[8];//长度为8个字节
-		wchar_t  *wchar = L"徐凯文";
+		
 		std::wstring wstr;
-		//char to wchar_t
 		wstr = CharToWchar(chr);
 		std::wcout << "CharToWchar转换之后wstr=" << wstr << std::endl;
 	}

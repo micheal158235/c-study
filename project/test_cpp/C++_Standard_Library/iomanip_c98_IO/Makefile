@@ -8,7 +8,7 @@ CFLAGS = -Wall -g
 #用法是$(subst FROM,TO,TEXT),即将TEXT中的东西从FROM变为TO 注意:不要写成:$(subst ,/,\,$(PWD))
 #例如$(subst /,\,c:/user/)得到的结果是c:/user/
 SOURCE_DIR := $(subst /,\,$(PWD)) 
-TARGET = $(PWD)/wchar2char
+TARGET = $(PWD)/iomanipStudy
 #包含wchar2char与path1等目录,添加的头文件会去这几个目录下找
 VPATH = wchar2char:path1
 #vpath % wchar2char
