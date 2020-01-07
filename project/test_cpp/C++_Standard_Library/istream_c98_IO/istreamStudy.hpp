@@ -2,7 +2,7 @@
 #define _ISTREAMSTUDY_H
 
 namespace QX{
-	
+	int TestBaseFunction(void);
 	int TestGetline(void);
 	int TestGet(void);
 	int TestPeek(void);
