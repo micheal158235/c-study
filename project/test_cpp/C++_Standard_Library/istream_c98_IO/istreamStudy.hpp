@@ -10,7 +10,6 @@ namespace QX{
 	int TestRead_Readsome(void);
 	int TestSeekg(void);
 	int TestStreamStatus(void);//此函数测试通过good()、eof()、fail()和bad()等成员函数获取流状态
-	
 }
 
 #endif

@@ -16,11 +16,12 @@
 
 [参考文章]：https://blog.csdn.net/selina8921/article/details/79067941
  */
- 
-#include <limits>
-#include <fstream>
-#include <sstream>
-#include <iostream>     // std::cin, std::cout
+
+//#include <sstream>
+#include <cassert>  //assert函数
+#include <limits>   //std::numeric_limits<std::streamsize>::max()
+#include <fstream>  //std::ifstream
+#include <iostream> // std::cin, std::cout
 
 #include "istreamStudy.hpp"
 
@@ -41,7 +42,7 @@ namespace QX{
 		char ch1, ch2, ch3;
 		int int1, int2, int3, int4;
 		
-		//键盘输入"12t33[回车]" 对比
+		//键盘输入"12t33[回车]"
 		std::cout << "please input '12t33' + [回车] \n";
 		std::cin >> ch1; //ch1获取到1，缓冲区还剩2t33[回车]
 		std::cout << "ch1=" << ch1 << std::endl;
@@ -189,7 +190,7 @@ namespace QX{
 		// 如此清除输入缓冲区，如果缓冲区无数据，输入状态将被置成致命的输入:std::ios::badbit(4)
 		// char clearBuf[4096];
 		// std::cin.get(clearBuf,4096).get();//清除输入缓冲区,避免受到上个函数的干扰
-		// std::cout << " rdstate333() = " << std::cin.rdstate() << std::endl;
+		// std::cout << " rdstate() = " << std::cin.rdstate() << std::endl;
 		//----------------------------------------清空缓冲区--------------------------------------//
 		
 		//1、读取单个字符: 
@@ -256,9 +257,9 @@ namespace QX{
 	int TestPeek(void)
 	{
 		std::cout << "---------------------------" << std::endl;
-		std::cout << "--------Test peek-------" << std::endl;
+		std::cout << "---------Test peek---------" << std::endl;
 		std::cout << "---------------------------" << std::endl;
-		std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');//清除输入缓冲区的当前行,避免受到上个函数的干扰
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');//清除输入缓冲区的当前行,避免受到上个函数的干扰,当缓冲区无数据时会阻塞程序往下执行
 		
 		char c;
 		int n;
@@ -333,17 +334,85 @@ namespace QX{
 		// 实际上,readsome()也是调用read()和gcount()来实现的.
 	}
 	
+	/****************************************************************************
+	(1)	istream& seekg (streampos pos);
+        指向输入流位置为pos的地方
+    (2)	istream& seekg (streamoff off, ios_base::seekdir way);
+		第一个参数是偏移量，第二个参数是基地址。
+		对于第一个参数，可以是正负数值，正的表示向后偏移，负的表示向前偏移。
+		第二个参数可以是：
+					ios：：beg：表示输入流的开始位置
+					ios：：cur：表示输入流的当前位置
+					ios：：end：表示输入流的结束位置
+	****************************************************************************/
 	int TestSeekg(void)
 	{
+		std::cout << "---------------------------" << std::endl;
+		std::cout << "------Test read seekg------" << std::endl;
+		std::cout << "---------------------------" << std::endl;
+		std::cin.clear();//清除状态位
+		std::cin.sync(); //清除缓冲区
+		
+		std::ifstream is ("./istreamStudy.hpp", std::ifstream::binary);
+		if (is) 
+		{
+		// get length of file:
+		is.seekg (0, is.end); 
+		int length = is.tellg();
+		is.seekg (0, is.beg);
+
+		char * buffer = new char [length];// allocate memory: 
+		is.read (buffer,length);          // read data as a block:						  
+		is.close();                       					  
+		std::cout.write(buffer,length);  // print content:
+		delete[] buffer;
+		}
+		std::cout << "--------------1-------------" << std::endl;
+		
+		std::ifstream in("istreamStudy.hpp");
+		assert(in);
+		in.seekg(0,std::ios::end);       //基地址为文件结束处，偏移地址为0，于是指针定位在文件结束处
+		std::streampos sp=in.tellg();    //sp为定位指针，因为它在文件结束处，所以也就是文件的大小
+		std::cout<<"file size:" << sp << std::endl;
+		in.seekg(-sp/3,std::ios::end);   //基地址为文件末，偏移地址为负，于是向前移动sp/3个字节
+		std::streampos sp2=in.tellg();   //sp2为30
+		std::cout<<"from file to point:" << sp2 << std::endl;
+		in.seekg(0,std::ios::beg);       //基地址为文件头，偏移量为0，于是定位在文件头
+		std::cout<<in.rdbuf()<<std::endl;//从头读出文件内容
+		in.seekg(sp2);                   //这里sp2是绝对位置，与前面的偏移计算无关
+		std::cout<<in.rdbuf()<<std::endl;//从sp2开始读出文件内容
+		in.close();
+		
 		return 0;
 	}
 	
-	//此函数测试通过good()、eof()、fail()和bad()等成员函数获取流状态
+	//测试通过good()、eof()、fail()和bad()等成员函数获取流状态
 	int TestStreamStatus(void)
 	{
+		std::cout << "---------------------------" << std::endl;
+		std::cout << "------Test read seekg------" << std::endl;
+		std::cout << "---------------------------" << std::endl;
+		std::cin.clear();//清除状态位
+		std::cin.sync(); //清除缓冲区
+		
+		int i;
+		while(1)
+		{
+			std::cout << "请依次输入:’a’[回车];5[回车] 查看效果" << std::endl;
+			std::cin >> i;
+			bool good = std::cin.good(); //goodbit位表示一切正常，没有错误发生，也没有发生输入结束。
+			bool bad  = std::cin.bad();  //badbit位表示了在流缓冲区中发生了致命性错误，流将不能继续使用
+			bool fail = std::cin.fail(); //failbit位表示I/O操作由于非法数据而失败，流可以继续使用
+			bool eof  = std::cin.eof();  //eofbit位表示输入结束，例如按下了Ctrl-Z
+		    std::cout << "i=" << i << " goodbit=" << good << " badbit=" << bad << " failbit=" << fail << " eofbit=" << eof <<std::endl;
+			if(good)
+				break;
+			std::cin.clear(); //清空标志位
+		    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //跳过流中格式不正确的数据
+		}
 		return 0;
 	}
-
+	
 }
 
 int main(void)
@@ -354,5 +423,7 @@ int main(void)
 	QX::TestPeek();
 	QX::TestPutback();
 	QX::TestRead_Readsome();
+	QX::TestSeekg();
+	QX::TestStreamStatus();
 	return 0;
 }
